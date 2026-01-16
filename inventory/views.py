@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from accounts.permissions import require_manager_or_owner
 from .forms import DressForm
-from .models import Dress
+from .models import Dress, DressImage
 
 
 @login_required
@@ -16,11 +16,16 @@ def dress_list(request):
 @require_manager_or_owner
 def dress_create(request):
     if request.method == "POST":
-        form = DressForm(request.POST)
+        form = DressForm(request.POST, request.FILES)
         if form.is_valid():
             dress = form.save(commit=False)
             dress.shop = request.user.shop
             dress.save()
+            DressImage.objects.create(
+                dress=dress,
+                image=form.cleaned_data["image"],
+                alt_text=dress.name,
+            )
             return redirect("dress_list")
     else:
         form = DressForm()
@@ -32,9 +37,16 @@ def dress_create(request):
 def dress_edit(request, dress_id: int):
     dress = get_object_or_404(Dress, id=dress_id, shop=request.user.shop)
     if request.method == "POST":
-        form = DressForm(request.POST, instance=dress)
+        form = DressForm(request.POST, request.FILES, instance=dress)
         if form.is_valid():
             form.save()
+            image = form.cleaned_data.get("image")
+            if image:
+                DressImage.objects.create(
+                    dress=dress,
+                    image=image,
+                    alt_text=dress.name,
+                )
             return redirect("dress_list")
     else:
         form = DressForm(instance=dress)

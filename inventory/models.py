@@ -5,6 +5,7 @@ class Dress(models.Model):
     shop = models.ForeignKey("shops.Shop", on_delete=models.CASCADE, related_name="dresses")
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    stock = models.PositiveIntegerField(default=0)
     size_range = models.CharField(max_length=100, blank=True)
     color = models.CharField(max_length=100, blank=True)
     brand = models.CharField(max_length=120, blank=True)
