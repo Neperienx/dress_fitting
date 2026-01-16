@@ -6,3 +6,5 @@ __pycache__/
 .env
 staticfiles/
 media/
+accounts/*
+shops/*
