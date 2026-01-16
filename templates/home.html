@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Bridal Studio | Welcome{% endblock %}
+{% block content %}
+<div class="bg-white shadow-sm rounded-2xl p-10">
+    <h2 class="text-3xl font-light text-slate-800">Welcome to your Bridal Studio OS</h2>
+    <p class="text-slate-500 mt-3 max-w-2xl">Run elevated in-store bride sessions with a calm, tablet-first experience. Stylists can start a session, brides can swipe through curated gowns, and your team gets an instant Top 10 list.</p>
+    <div class="mt-8 flex flex-wrap gap-4">
+        <a href="{% url 'account_login' %}" class="bg-rose-400 text-white px-5 py-2 rounded-full shadow">Sign in</a>
+        <a href="{% url 'dashboard' %}" class="border border-rose-200 text-rose-500 px-5 py-2 rounded-full">Go to dashboard</a>
+    </div>
+</div>
+{% endblock %}

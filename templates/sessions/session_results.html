@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Top Dresses{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="text-center mb-6">
+        <p class="text-xs uppercase tracking-widest text-rose-400">Top picks</p>
+        <h2 class="text-2xl font-semibold">Recommended dresses</h2>
+        <p class="text-sm text-slate-500">Based on her swipes.</p>
+    </div>
+    <div class="grid gap-4">
+        {% for dress in dresses %}
+            <div class="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4">
+                <div class="w-20 h-24 bg-rose-50 rounded-xl overflow-hidden flex items-center justify-center">
+                    {% if dress.images.first %}
+                        <img class="object-cover w-full h-full" src="{{ dress.images.first.image.url }}" alt="{{ dress.name }}">
+                    {% else %}
+                        <span class="text-rose-300 text-xs">No image</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <h3 class="font-medium">{{ dress.name }}</h3>
+                    <p class="text-sm text-slate-500">{{ dress.brand }} · {{ dress.silhouette }} · ${{ dress.price }}</p>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-xl shadow-sm p-6 text-slate-500">No recommendations yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
