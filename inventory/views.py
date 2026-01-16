@@ -8,7 +8,10 @@ from .models import Dress, DressImage
 @login_required
 @require_manager_or_owner
 def dress_list(request):
-    dresses = Dress.objects.filter(shop=request.user.shop).order_by("name")
+    if request.user.is_staff or request.user.is_superuser:
+        dresses = Dress.objects.all().order_by("name")
+    else:
+        dresses = Dress.objects.filter(shop=request.user.shop).order_by("name")
     return render(request, "inventory/dress_list.html", {"dresses": dresses})
 
 
@@ -35,7 +38,10 @@ def dress_create(request):
 @login_required
 @require_manager_or_owner
 def dress_edit(request, dress_id: int):
-    dress = get_object_or_404(Dress, id=dress_id, shop=request.user.shop)
+    if request.user.is_staff or request.user.is_superuser:
+        dress = get_object_or_404(Dress, id=dress_id)
+    else:
+        dress = get_object_or_404(Dress, id=dress_id, shop=request.user.shop)
     if request.method == "POST":
         form = DressForm(request.POST, request.FILES, instance=dress)
         if form.is_valid():

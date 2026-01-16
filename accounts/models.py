@@ -18,4 +18,8 @@ class User(AbstractUser):
     )
 
     def is_manager_or_owner(self) -> bool:
-        return self.role in {self.Role.OWNER, self.Role.MANAGER}
+        return (
+            self.is_staff
+            or self.is_superuser
+            or self.role in {self.Role.OWNER, self.Role.MANAGER}
+        )
