@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Dresses{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-semibold">Dresses</h2>
+    <a class="bg-rose-400 text-white px-4 py-2 rounded-full" href="{% url 'dress_create' %}">Add dress</a>
+</div>
+<div class="grid gap-4">
+    {% for dress in dresses %}
+        <div class="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+            <div>
+                <h3 class="font-medium">{{ dress.name }}</h3>
+                <p class="text-sm text-slate-500">{{ dress.brand }} · {{ dress.silhouette }} · ${{ dress.price }}</p>
+            </div>
+            <a class="text-rose-400" href="{% url 'dress_edit' dress.id %}">Edit</a>
+        </div>
+    {% empty %}
+        <div class="bg-white rounded-xl shadow-sm p-6 text-slate-500">No dresses yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Bridal Studio | Dashboard{% endblock %}
+{% block content %}
+<div class="grid gap-6 md:grid-cols-2">
+    <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h3 class="text-xl font-medium">Start a Bride Session</h3>
+        <p class="text-slate-500 mt-2">Create a new session and hand the tablet to the bride.</p>
+        <a href="{% url 'session_create' %}" class="mt-4 inline-flex bg-rose-400 text-white px-4 py-2 rounded-full">New session</a>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h3 class="text-xl font-medium">Manage Dresses</h3>
+        <p class="text-slate-500 mt-2">Add and refine your collection for each shop.</p>
+        <a href="{% url 'dress_list' %}" class="mt-4 inline-flex border border-rose-200 text-rose-500 px-4 py-2 rounded-full">View dresses</a>
+    </div>
+</div>
+<div class="mt-10 bg-rose-50 rounded-2xl p-6 text-sm text-rose-700">
+    Signed in as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong> for <strong>{{ request.user.shop.name }}</strong>.
+</div>
+{% endblock %}

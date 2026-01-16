@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="bg-white rounded-2xl shadow-sm p-8">
+    <h2 class="text-2xl font-semibold mb-4">{{ title }}</h2>
+    <form method="post" class="grid gap-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="bg-rose-400 text-white px-4 py-2 rounded-full" type="submit">Save</button>
+    </form>
+</div>
+{% endblock %}

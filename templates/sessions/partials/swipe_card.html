@@ -1,0 +1,44 @@
+<div class="bg-white rounded-3xl shadow-lg p-6" x-data="{ liked: null }">
+    {% if dress %}
+        <div class="aspect-[3/4] bg-rose-50 rounded-2xl flex items-center justify-center overflow-hidden">
+            {% if dress.images.first %}
+                <img class="object-cover w-full h-full" src="{{ dress.images.first.image.url }}" alt="{{ dress.name }}">
+            {% else %}
+                <span class="text-rose-300">No image</span>
+            {% endif %}
+        </div>
+        <div class="mt-5">
+            <h3 class="text-xl font-semibold">{{ dress.name }}</h3>
+            <p class="text-sm text-slate-500">{{ dress.brand }} · {{ dress.silhouette }} · ${{ dress.price }}</p>
+        </div>
+        <div class="mt-6 flex gap-4">
+            <button
+                class="flex-1 border border-slate-200 rounded-full py-3"
+                hx-post="{% url 'record_swipe' session.code %}"
+                hx-target="#swipe-card"
+                hx-swap="outerHTML"
+                hx-vals='{"dress_id": "{{ dress.id }}", "liked": "false"}'
+            >Dislike</button>
+            <button
+                class="flex-1 bg-rose-400 text-white rounded-full py-3"
+                hx-post="{% url 'record_swipe' session.code %}"
+                hx-target="#swipe-card"
+                hx-swap="outerHTML"
+                hx-vals='{"dress_id": "{{ dress.id }}", "liked": "true"}'
+            >Love it</button>
+        </div>
+        <div class="mt-4 text-xs text-slate-400">Tip: use ← / → keys on keyboard for quicker swipes.</div>
+        <script>
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "ArrowLeft") {
+                    document.querySelector("button[hx-vals*='false']")?.click();
+                }
+                if (event.key === "ArrowRight") {
+                    document.querySelector("button[hx-vals*='true']")?.click();
+                }
+            }, { once: true });
+        </script>
+    {% else %}
+        <div class="text-center text-slate-500">No more dresses to swipe.</div>
+    {% endif %}
+</div>
