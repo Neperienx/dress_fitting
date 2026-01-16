@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     "accounts",
     "shops",
     "inventory",
-    "sessions",
+    "sessions.apps.SessionsConfig",
     "api",
 ]
 
