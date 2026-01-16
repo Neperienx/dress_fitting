@@ -21,5 +21,9 @@ urlpatterns = [
     path("api/", include("api.urls")),
 ]
 
+handler403 = "config.views.error_403"
+handler404 = "config.views.error_404"
+handler500 = "config.views.error_500"
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
