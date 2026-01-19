@@ -22,5 +22,6 @@ class DressForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["price"].required = False
         if self.instance and self.instance.pk:
             self.fields["image"].required = False
