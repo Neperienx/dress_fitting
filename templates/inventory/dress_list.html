@@ -30,7 +30,9 @@
                     <a class="text-sm font-medium text-rose-400 hover:text-rose-500" href="{% url 'dress_edit' dress.id %}">Edit</a>
                 </div>
                 <div class="mt-3 flex items-center justify-between text-sm text-slate-500">
-                    <span>${{ dress.price }}</span>
+                    <span>
+                        {% if dress.price %}${{ dress.price }}{% else %}Price optional{% endif %}
+                    </span>
                     <span>{{ dress.stock }} in stock</span>
                 </div>
             </div>

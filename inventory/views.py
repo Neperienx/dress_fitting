@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from accounts.permissions import require_manager_or_owner
@@ -8,6 +9,12 @@ from .models import Dress, DressImage
 @login_required
 @require_manager_or_owner
 def dress_list(request):
+    if not (request.user.is_staff or request.user.is_superuser) and not request.user.shop:
+        messages.error(
+            request,
+            "Assign a shop to this account before managing dresses.",
+        )
+        return redirect("dashboard")
     if request.user.is_staff or request.user.is_superuser:
         dresses = Dress.objects.all().order_by("name")
     else:
@@ -18,6 +25,12 @@ def dress_list(request):
 @login_required
 @require_manager_or_owner
 def dress_create(request):
+    if not (request.user.is_staff or request.user.is_superuser) and not request.user.shop:
+        messages.error(
+            request,
+            "Assign a shop to this account before adding dresses.",
+        )
+        return redirect("dashboard")
     if request.method == "POST":
         form = DressForm(request.POST, request.FILES)
         if form.is_valid():
@@ -38,6 +51,12 @@ def dress_create(request):
 @login_required
 @require_manager_or_owner
 def dress_edit(request, dress_id: int):
+    if not (request.user.is_staff or request.user.is_superuser) and not request.user.shop:
+        messages.error(
+            request,
+            "Assign a shop to this account before editing dresses.",
+        )
+        return redirect("dashboard")
     if request.user.is_staff or request.user.is_superuser:
         dress = get_object_or_404(Dress, id=dress_id)
     else:
