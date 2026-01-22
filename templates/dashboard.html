@@ -13,7 +13,19 @@
         <a href="{% url 'dress_list' %}" class="mt-4 inline-flex border border-rose-200 text-rose-500 px-4 py-2 rounded-full">View dresses</a>
     </div>
 </div>
-<div class="mt-10 bg-rose-50 rounded-2xl p-6 text-sm text-rose-700">
-    Signed in as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong> for <strong>{{ request.user.shop.name }}</strong>.
-</div>
+{% if request.user.shop %}
+    <div class="mt-10 bg-rose-50 rounded-2xl p-6 text-sm text-rose-700">
+        Signed in as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong> for
+        <strong>{{ request.user.shop.name }}</strong>. Share this shop code to invite teammates:
+        <span class="font-semibold">{{ request.user.shop.id }}</span>.
+    </div>
+{% else %}
+    <div class="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+        Your account is not linked to a shop yet. Create one or join with a shop code to start sessions and manage
+        dresses.
+        <a class="mt-3 inline-flex rounded-full bg-rose-500 px-4 py-2 text-white" href="{% url 'shop_setup' %}">
+            Create or join a shop
+        </a>
+    </div>
+{% endif %}
 {% endblock %}

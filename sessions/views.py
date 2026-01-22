@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -12,6 +13,9 @@ MAX_SWIPES = 20
 def session_create(request):
     if not request.user.is_authenticated:
         return redirect("account_login")
+    if not (request.user.is_staff or request.user.is_superuser) and not request.user.shop:
+        messages.error(request, "Create or join a shop before starting a session.")
+        return redirect("shop_setup")
     if request.method == "POST":
         form = BrideSessionForm(request.POST)
         if form.is_valid():

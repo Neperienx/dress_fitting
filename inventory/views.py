@@ -14,7 +14,7 @@ def dress_list(request):
             request,
             "Assign a shop to this account before managing dresses.",
         )
-        return redirect("dashboard")
+        return redirect("shop_setup")
     if request.user.is_staff or request.user.is_superuser:
         dresses = Dress.objects.all().order_by("name")
     else:
@@ -30,7 +30,7 @@ def dress_create(request):
             request,
             "Assign a shop to this account before adding dresses.",
         )
-        return redirect("dashboard")
+        return redirect("shop_setup")
     if request.method == "POST":
         form = DressForm(request.POST, request.FILES)
         if form.is_valid():
@@ -56,7 +56,7 @@ def dress_edit(request, dress_id: int):
             request,
             "Assign a shop to this account before editing dresses.",
         )
-        return redirect("dashboard")
+        return redirect("shop_setup")
     if request.user.is_staff or request.user.is_superuser:
         dress = get_object_or_404(Dress, id=dress_id)
     else:

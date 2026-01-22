@@ -11,6 +11,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("", shop_views.home, name="home"),
     path("dashboard/", shop_views.dashboard, name="dashboard"),
+    path("shops/setup/", shop_views.shop_setup, name="shop_setup"),
     path("dresses/", inventory_views.dress_list, name="dress_list"),
     path("dresses/new/", inventory_views.dress_create, name="dress_create"),
     path("dresses/<int:dress_id>/edit/", inventory_views.dress_edit, name="dress_edit"),
