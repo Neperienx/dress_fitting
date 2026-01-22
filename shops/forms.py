@@ -1,21 +1,14 @@
 from django import forms
-from allauth.account.forms import LoginForm, SignupForm
-
-from accounts.models import User
 
 
-class RoleSignupForm(SignupForm):
-    role = forms.ChoiceField(
-        choices=(
-            (User.Role.OWNER, "Owner"),
-            (User.Role.MANAGER, "Admin"),
-            (User.Role.STYLIST, "Stylist"),
-        ),
-        label="Role",
-    )
+class ShopCreateForm(forms.Form):
+    name = forms.CharField(max_length=255, label="Shop name")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._apply_base_styles()
+
+    def _apply_base_styles(self) -> None:
         base_classes = (
             "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm "
             "focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-300"
@@ -24,16 +17,15 @@ class RoleSignupForm(SignupForm):
             existing_classes = field.widget.attrs.get("class", "")
             field.widget.attrs["class"] = f"{existing_classes} {base_classes}".strip()
 
-    def save(self, request):
-        user = super().save(request)
-        user.role = self.cleaned_data["role"]
-        user.save()
-        return user
 
+class ShopJoinForm(forms.Form):
+    code = forms.UUIDField(label="Shop code")
 
-class RoleLoginForm(LoginForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._apply_base_styles()
+
+    def _apply_base_styles(self) -> None:
         base_classes = (
             "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm "
             "focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-300"
