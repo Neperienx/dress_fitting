@@ -19,6 +19,7 @@ def dress_list(request):
         dresses = Dress.objects.all().order_by("name")
     else:
         dresses = Dress.objects.filter(shop=request.user.shop).order_by("name")
+    dresses = dresses.prefetch_related("images")
     return render(request, "inventory/dress_list.html", {"dresses": dresses})
 
 

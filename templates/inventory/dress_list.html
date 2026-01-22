@@ -14,7 +14,7 @@
         <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
             <div class="aspect-[3/4] bg-slate-100">
                 {% with image=dress.images.first %}
-                    {% if image %}
+                    {% if image and image.image %}
                         <img class="h-full w-full object-cover" src="{{ image.image.url }}" alt="{{ image.alt_text|default:dress.name }}">
                     {% else %}
                         <div class="flex h-full w-full items-center justify-center text-sm text-slate-400">No image</div>
