@@ -1,0 +1,431 @@
+{
+  "defaultLocale": "en",
+  "locales": {
+    "en": { "label": "English" },
+    "fr": { "label": "Français" },
+    "de": { "label": "Deutsch" },
+    "es": { "label": "Español" }
+  },
+  "blocks": [
+    {
+      "id": "hero",
+      "type": "hero",
+      "theme": "alt",
+      "content": {
+        "en": {
+          "eyebrow": "Dress shop platform",
+          "title": "Turn every bridal appointment into a curated experience.",
+          "subtitle": "Bridal Studio Sessions helps dress boutiques run high-touch appointments, track preferences, and close more sales with confidence.",
+          "primaryCta": "Book a demo",
+          "secondaryCta": "See how it works",
+          "mediaTitle": "Styled for modern boutiques",
+          "mediaText": "A tablet-first workflow built for stylists, with live preference tracking and instant Top 10 recaps.",
+          "highlights": [
+            "Personalized swiping for brides",
+            "Real-time insights for stylists",
+            "Shareable favorites after the visit"
+          ]
+        },
+        "fr": {
+          "eyebrow": "Plateforme pour boutiques",
+          "title": "Transformez chaque rendez-vous mariée en expérience sur-mesure.",
+          "subtitle": "Bridal Studio Sessions aide les boutiques à créer des rendez-vous haut de gamme, suivre les préférences et vendre avec assurance.",
+          "primaryCta": "Demander une démo",
+          "secondaryCta": "Voir le parcours",
+          "mediaTitle": "Pensé pour les boutiques modernes",
+          "mediaText": "Un flux tablette pour les stylistes, avec suivi des préférences et Top 10 instantané.",
+          "highlights": [
+            "Swipe personnalisé pour les mariées",
+            "Insights en temps réel pour les stylistes",
+            "Favoris partageables après la visite"
+          ]
+        },
+        "de": {
+          "eyebrow": "Plattform für Brautstudios",
+          "title": "Machen Sie jeden Termin zu einem kuratierten Erlebnis.",
+          "subtitle": "Bridal Studio Sessions unterstützt Boutiquen bei Premium-Terminen, erfasst Vorlieben und steigert Abschlüsse.",
+          "primaryCta": "Demo buchen",
+          "secondaryCta": "So funktioniert's",
+          "mediaTitle": "Für moderne Boutiquen entwickelt",
+          "mediaText": "Tablet-Workflow für Stylistinnen mit Live-Tracking und sofortiger Top-10-Auswertung.",
+          "highlights": [
+            "Personalisierte Swipes für Bräute",
+            "Echtzeit-Insights für Stylistinnen",
+            "Favoriten teilen nach dem Termin"
+          ]
+        },
+        "es": {
+          "eyebrow": "Plataforma para boutiques",
+          "title": "Convierte cada cita bridal en una experiencia curada.",
+          "subtitle": "Bridal Studio Sessions ayuda a las boutiques a dirigir citas premium, seguir preferencias y cerrar más ventas.",
+          "primaryCta": "Solicitar demo",
+          "secondaryCta": "Ver el recorrido",
+          "mediaTitle": "Diseñado para boutiques modernas",
+          "mediaText": "Flujo en tablet para estilistas con seguimiento en vivo y Top 10 instantáneo.",
+          "highlights": [
+            "Swipe personalizado para novias",
+            "Insights en tiempo real",
+            "Favoritos compartibles después de la visita"
+          ]
+        }
+      }
+    },
+    {
+      "id": "logos",
+      "type": "logoCloud",
+      "content": {
+        "en": {
+          "title": "Trusted by growing studios",
+          "logos": [
+            "Luna Bridal Atelier",
+            "Pearl & Ivy",
+            "Celeste Couture",
+            "Maison Lueur",
+            "Harbor Lace"
+          ]
+        },
+        "fr": {
+          "title": "Adopté par des ateliers en croissance",
+          "logos": [
+            "Luna Bridal Atelier",
+            "Perle & Lierre",
+            "Couture Céleste",
+            "Maison Lueur",
+            "Harbor Lace"
+          ]
+        },
+        "de": {
+          "title": "Vertraut von wachsenden Studios",
+          "logos": [
+            "Luna Bridal Atelier",
+            "Perle & Efeu",
+            "Celeste Couture",
+            "Maison Lueur",
+            "Harbor Lace"
+          ]
+        },
+        "es": {
+          "title": "Con la confianza de estudios en crecimiento",
+          "logos": [
+            "Luna Bridal Atelier",
+            "Perla & Hiedra",
+            "Celeste Couture",
+            "Maison Lueur",
+            "Harbor Lace"
+          ]
+        }
+      }
+    },
+    {
+      "id": "features",
+      "type": "featureList",
+      "theme": "alt",
+      "content": {
+        "en": {
+          "eyebrow": "Why boutiques love it",
+          "title": "Everything you need to run unforgettable appointments.",
+          "subtitle": "Build a repeatable, high-touch experience for every bride with tools designed for stylists.",
+          "items": [
+            {
+              "title": "Appointment-ready setup",
+              "description": "Create bride profiles, bring in inspiration boards, and pre-load gowns before she arrives."
+            },
+            {
+              "title": "Swipe-to-rank journey",
+              "description": "Guided swiping helps brides react instantly, giving stylists clearer direction."
+            },
+            {
+              "title": "Top 10 recap",
+              "description": "Automatically generate a ranked list to share with the bride and schedule the follow-up."
+            },
+            {
+              "title": "Team-ready analytics",
+              "description": "See which silhouettes and designers are resonating across the store."
+            }
+          ]
+        },
+        "fr": {
+          "eyebrow": "Pourquoi elles l'adorent",
+          "title": "Tout pour orchestrer des rendez-vous mémorables.",
+          "subtitle": "Créez une expérience répétable et premium avec des outils pensés pour les stylistes.",
+          "items": [
+            {
+              "title": "Préparation avant rendez-vous",
+              "description": "Créez le profil mariée, ajoutez ses inspirations et chargez les robes à l'avance."
+            },
+            {
+              "title": "Parcours swipe-to-rank",
+              "description": "Le swipe guidé capte les réactions immédiates pour guider le styling."
+            },
+            {
+              "title": "Récapitulatif Top 10",
+              "description": "Générez automatiquement un classement à partager et planifiez la suite."
+            },
+            {
+              "title": "Analytique pour l'équipe",
+              "description": "Identifiez les silhouettes et créateurs les plus appréciés en boutique."
+            }
+          ]
+        },
+        "de": {
+          "eyebrow": "Darum lieben es Boutiquen",
+          "title": "Alles für unvergessliche Termine.",
+          "subtitle": "Schaffen Sie ein wiederholbares Premium-Erlebnis mit Tools für Stylistinnen.",
+          "items": [
+            {
+              "title": "Startklar vor dem Termin",
+              "description": "Brautprofile, Moodboards und Kleider vorab anlegen."
+            },
+            {
+              "title": "Swipe-to-Rank Ablauf",
+              "description": "Geführtes Swipen zeigt sofort, was der Braut gefällt."
+            },
+            {
+              "title": "Top-10-Recap",
+              "description": "Automatisch ein Ranking teilen und Folgetermine sichern."
+            },
+            {
+              "title": "Analytics fürs Team",
+              "description": "Erkennen Sie Trends bei Silhouetten und Designern im Store."
+            }
+          ]
+        },
+        "es": {
+          "eyebrow": "Por qué encanta",
+          "title": "Todo para citas inolvidables.",
+          "subtitle": "Crea una experiencia premium repetible con herramientas para estilistas.",
+          "items": [
+            {
+              "title": "Preparación previa",
+              "description": "Crea perfiles de novia, añade inspiración y precarga vestidos antes de la cita."
+            },
+            {
+              "title": "Recorrido swipe-to-rank",
+              "description": "El swipe guiado capta reacciones inmediatas para orientar el styling."
+            },
+            {
+              "title": "Resumen Top 10",
+              "description": "Genera un ranking automático para compartir y agendar el seguimiento."
+            },
+            {
+              "title": "Analítica para el equipo",
+              "description": "Detecta qué siluetas y diseñadores triunfan en la boutique."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "workflow",
+      "type": "split",
+      "content": {
+        "en": {
+          "eyebrow": "Workflow",
+          "title": "From check-in to checkout, every step stays aligned.",
+          "description": "Centralize notes, inspiration, and gown feedback so stylists never miss a beat during the appointment.",
+          "stats": [
+            { "label": "Average time saved", "value": "35 min" },
+            { "label": "Brides who re-book", "value": "72%" },
+            { "label": "More confident top picks", "value": "2.4×" }
+          ],
+          "imageLabel": "Live session overview"
+        },
+        "fr": {
+          "eyebrow": "Workflow",
+          "title": "Du check-in à la vente, chaque étape reste alignée.",
+          "description": "Centralisez notes, inspirations et retours sur les robes pour ne rien manquer en rendez-vous.",
+          "stats": [
+            { "label": "Temps moyen gagné", "value": "35 min" },
+            { "label": "Mariées qui reprennent RDV", "value": "72%" },
+            { "label": "Top choix plus confiants", "value": "2,4×" }
+          ],
+          "imageLabel": "Vue en direct de la session"
+        },
+        "de": {
+          "eyebrow": "Workflow",
+          "title": "Vom Check-in bis zum Abschluss bleibt alles abgestimmt.",
+          "description": "Bündeln Sie Notizen, Inspirationen und Feedback, damit Stylistinnen immer den Überblick behalten.",
+          "stats": [
+            { "label": "Durchschnittlich gesparte Zeit", "value": "35 Min" },
+            { "label": "Bräute mit Folgetermin", "value": "72%" },
+            { "label": "Sicherere Top-Auswahl", "value": "2,4×" }
+          ],
+          "imageLabel": "Live-Übersicht der Session"
+        },
+        "es": {
+          "eyebrow": "Flujo",
+          "title": "Del check-in al cierre, cada paso queda alineado.",
+          "description": "Centraliza notas, inspiración y feedback para que las estilistas no pierdan detalle.",
+          "stats": [
+            { "label": "Tiempo medio ahorrado", "value": "35 min" },
+            { "label": "Novias que vuelven a agendar", "value": "72%" },
+            { "label": "Selección top más segura", "value": "2,4×" }
+          ],
+          "imageLabel": "Vista en vivo de la sesión"
+        }
+      }
+    },
+    {
+      "id": "steps",
+      "type": "steps",
+      "theme": "alt",
+      "content": {
+        "en": {
+          "eyebrow": "Implementation",
+          "title": "Launch in a week, not a quarter.",
+          "steps": [
+            {
+              "title": "Import your inventory",
+              "description": "Upload dresses, designers, and sizing info with our guided CSV importer."
+            },
+            {
+              "title": "Train the team",
+              "description": "We host a 60-minute onboarding for stylists and managers."
+            },
+            {
+              "title": "Start your first sessions",
+              "description": "Send a branded swipe link and deliver a Top 10 recap instantly."
+            }
+          ]
+        },
+        "fr": {
+          "eyebrow": "Mise en place",
+          "title": "Lancez en une semaine, pas un trimestre.",
+          "steps": [
+            {
+              "title": "Importer votre inventaire",
+              "description": "Chargez robes, créateurs et tailles via notre import CSV guidé."
+            },
+            {
+              "title": "Former l'équipe",
+              "description": "Onboarding de 60 minutes pour stylistes et managers."
+            },
+            {
+              "title": "Démarrer les sessions",
+              "description": "Envoyez un lien swipe brandé et livrez un Top 10 instantané."
+            }
+          ]
+        },
+        "de": {
+          "eyebrow": "Einführung",
+          "title": "Start in einer Woche statt in einem Quartal.",
+          "steps": [
+            {
+              "title": "Inventar importieren",
+              "description": "Laden Sie Kleider, Designer und Größen per CSV-Import hoch."
+            },
+            {
+              "title": "Team schulen",
+              "description": "60-minütiges Onboarding für Stylistinnen und Manager."
+            },
+            {
+              "title": "Erste Sessions starten",
+              "description": "Senden Sie einen gebrandeten Swipe-Link und liefern Sie Top-10-Recaps."
+            }
+          ]
+        },
+        "es": {
+          "eyebrow": "Implementación",
+          "title": "Lanza en una semana, no en un trimestre.",
+          "steps": [
+            {
+              "title": "Importa tu inventario",
+              "description": "Sube vestidos, diseñadores y tallas con nuestro importador CSV guiado."
+            },
+            {
+              "title": "Capacita al equipo",
+              "description": "Onboarding de 60 minutos para estilistas y managers."
+            },
+            {
+              "title": "Inicia las sesiones",
+              "description": "Envía un enlace swipe con tu marca y entrega el Top 10 al instante."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "testimonial",
+      "type": "testimonial",
+      "content": {
+        "en": {
+          "quote": "We doubled our conversion rate in three months. Brides leave with clarity, and stylists feel empowered.",
+          "name": "Sienna Hart",
+          "role": "Owner, Luna Bridal Atelier"
+        },
+        "fr": {
+          "quote": "Nous avons doublé notre taux de conversion en trois mois. Les mariées repartent sereines, les stylistes sont confiantes.",
+          "name": "Sienna Hart",
+          "role": "Propriétaire, Luna Bridal Atelier"
+        },
+        "de": {
+          "quote": "Wir haben unsere Abschlussrate in drei Monaten verdoppelt. Bräute gehen mit Klarheit, das Team ist gestärkt.",
+          "name": "Sienna Hart",
+          "role": "Inhaberin, Luna Bridal Atelier"
+        },
+        "es": {
+          "quote": "Duplicamos nuestra tasa de conversión en tres meses. Las novias se van seguras y el equipo se siente respaldado.",
+          "name": "Sienna Hart",
+          "role": "Propietaria, Luna Bridal Atelier"
+        }
+      }
+    },
+    {
+      "id": "cta",
+      "type": "cta",
+      "theme": "alt",
+      "content": {
+        "en": {
+          "title": "Ready to elevate your bridal experience?",
+          "subtitle": "Let us show you how Bridal Studio Sessions fits your boutique and your brand.",
+          "primaryCta": "Schedule a demo",
+          "secondaryCta": "Download the brochure"
+        },
+        "fr": {
+          "title": "Prête à sublimer l'expérience mariée ?",
+          "subtitle": "Découvrez comment Bridal Studio Sessions s'adapte à votre boutique et votre marque.",
+          "primaryCta": "Planifier une démo",
+          "secondaryCta": "Télécharger la brochure"
+        },
+        "de": {
+          "title": "Bereit für ein neues Brauterlebnis?",
+          "subtitle": "Wir zeigen Ihnen, wie Bridal Studio Sessions zu Ihrer Boutique passt.",
+          "primaryCta": "Demo vereinbaren",
+          "secondaryCta": "Broschüre herunterladen"
+        },
+        "es": {
+          "title": "¿Lista para elevar la experiencia bridal?",
+          "subtitle": "Te mostramos cómo Bridal Studio Sessions encaja con tu boutique y tu marca.",
+          "primaryCta": "Agendar demo",
+          "secondaryCta": "Descargar brochure"
+        }
+      }
+    },
+    {
+      "id": "footer",
+      "type": "footer",
+      "content": {
+        "en": {
+          "title": "Bridal Studio Sessions",
+          "description": "A modern appointment platform built for dress shops.",
+          "links": ["Privacy", "Terms", "Support", "Contact"]
+        },
+        "fr": {
+          "title": "Bridal Studio Sessions",
+          "description": "La plateforme moderne pour boutiques de robes.",
+          "links": ["Confidentialité", "Conditions", "Support", "Contact"]
+        },
+        "de": {
+          "title": "Bridal Studio Sessions",
+          "description": "Die moderne Terminplattform für Brautboutiquen.",
+          "links": ["Datenschutz", "AGB", "Support", "Kontakt"]
+        },
+        "es": {
+          "title": "Bridal Studio Sessions",
+          "description": "La plataforma moderna para tiendas de vestidos.",
+          "links": ["Privacidad", "Términos", "Soporte", "Contacto"]
+        }
+      }
+    }
+  ]
+}
