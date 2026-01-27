@@ -12,6 +12,15 @@ make dev
 ```
 This command creates a local virtualenv, installs dependencies, runs migrations, seeds demo data, and starts the server at `http://localhost:8000`.
 
+## Landing page (Python-rendered)
+The marketing landing page is rendered server-side with a lightweight Python HTTP server (no client-side JavaScript required).
+
+```bash
+python landing_server.py
+```
+
+Then open `http://localhost:8000/` in your browser. To switch languages, append a locale query param like `?lang=fr` (supported locales are `en`, `fr`, `de`, `es`).
+
 ## Setup details
 1. Copy env vars:
    ```bash
