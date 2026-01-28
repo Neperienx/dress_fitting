@@ -21,7 +21,7 @@
           "mediaTitle": "A calm, curated experience — powered by your inventory",
           "mediaText": "Tablet-first for in-store appointments. Stylists stay in control, with clear preferences and a shareable recap that keeps brides committed.",
           "image": {
-            "src": "images/hero.svg",
+            "src": "images/hero.png",
             "alt": "Bride and stylist reviewing gowns in a bridal boutique"
           },
           "highlights": [
@@ -39,7 +39,7 @@
           "mediaTitle": "Une expérience sereine et sur-mesure — basée sur votre inventaire",
           "mediaText": "Pensé tablette en boutique. Les stylistes gardent la main, avec des préférences claires et un récap partageable qui aide les mariées à rester engagées.",
           "image": {
-            "src": "images/hero.svg",
+            "src": "images/hero.png",
             "alt": "Mariée et styliste dans une boutique de robes"
           },
           "highlights": [
@@ -57,7 +57,7 @@
           "mediaTitle": "Ruhig, kuratiert, persönlich — auf Basis Ihres Inventars",
           "mediaText": "Tablet-first im Store. Stylistinnen bleiben am Steuer, mit klaren Vorlieben und einem teilbaren Recap, das Bräute bei der Entscheidung hält.",
           "image": {
-            "src": "images/hero.svg",
+            "src": "images/hero.png",
             "alt": "Braut und Stylistin in einer Brautboutique"
           },
           "highlights": [
@@ -75,7 +75,7 @@
           "mediaTitle": "Una experiencia tranquila y curada — con tu inventario",
           "mediaText": "Primero en tablet en tienda. Las estilistas mantienen el control, con preferencias claras y un resumen compartible que ayuda a que la novia se comprometa.",
           "image": {
-            "src": "images/hero.svg",
+            "src": "images/hero.png",
             "alt": "Novia y estilista en una boutique nupcial"
           },
           "highlights": [
@@ -246,7 +246,7 @@
           ],
           "imageLabel": "Live session overview",
           "image": {
-            "src": "images/workflow.svg",
+            "src": "images/workflow.png",
             "alt": "Stylist preparing a curated selection of dresses"
           }
         },
@@ -261,7 +261,7 @@
           ],
           "imageLabel": "Vue en direct de la session",
           "image": {
-            "src": "images/workflow.svg",
+            "src": "images/workflow.png",
             "alt": "Styliste préparant une sélection de robes"
           }
         },
@@ -276,7 +276,7 @@
           ],
           "imageLabel": "Live-Übersicht der Session",
           "image": {
-            "src": "images/workflow.svg",
+            "src": "images/workflow.png",
             "alt": "Stylistin bereitet eine kuratierte Auswahl vor"
           }
         },
@@ -291,7 +291,7 @@
           ],
           "imageLabel": "Vista en vivo de la sesión",
           "image": {
-            "src": "images/workflow.svg",
+            "src": "images/workflow.png",
             "alt": "Estilista preparando una selección curada"
           }
         }
