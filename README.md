@@ -21,6 +21,14 @@ python landing_server.py
 
 Then open `http://localhost:8000/` in your browser. To switch languages, append a locale query param like `?lang=fr` (supported locales are `en`, `fr`, `de`, `es`).
 
+### Updating landing page images
+Landing page images are configured in `landing-content.json` under each block's `image.src` field. The default setup points to local placeholders in `images/hero.svg` and `images/workflow.svg`.
+
+To replace the photos:
+1. Add your new image files under `images/` (or another static folder in the repo).
+2. Update the relevant `image.src` values in `landing-content.json` to the new relative paths.
+3. Restart `python landing_server.py` and refresh the page.
+
 ## Setup details
 1. Copy env vars:
    ```bash

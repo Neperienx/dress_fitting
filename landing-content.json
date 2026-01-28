@@ -21,7 +21,7 @@
           "mediaTitle": "Styled for modern boutiques",
           "mediaText": "A tablet-first workflow built for stylists, with live preference tracking and instant Top 10 recaps.",
           "image": {
-            "src": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/hero.svg",
             "alt": "Bride and stylist reviewing gowns on a rack"
           },
           "highlights": [
@@ -39,7 +39,7 @@
           "mediaTitle": "Pensé pour les boutiques modernes",
           "mediaText": "Un flux tablette pour les stylistes, avec suivi des préférences et Top 10 instantané.",
           "image": {
-            "src": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/hero.svg",
             "alt": "Mariée et styliste devant une sélection de robes"
           },
           "highlights": [
@@ -57,7 +57,7 @@
           "mediaTitle": "Für moderne Boutiquen entwickelt",
           "mediaText": "Tablet-Workflow für Stylistinnen mit Live-Tracking und sofortiger Top-10-Auswertung.",
           "image": {
-            "src": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/hero.svg",
             "alt": "Braut und Stylistin begutachten Kleider"
           },
           "highlights": [
@@ -75,7 +75,7 @@
           "mediaTitle": "Diseñado para boutiques modernas",
           "mediaText": "Flujo en tablet para estilistas con seguimiento en vivo y Top 10 instantáneo.",
           "image": {
-            "src": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/hero.svg",
             "alt": "Novia y estilista revisando vestidos"
           },
           "highlights": [
@@ -246,7 +246,7 @@
           ],
           "imageLabel": "Live session overview",
           "image": {
-            "src": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/workflow.svg",
             "alt": "Stylist preparing dresses in a studio"
           }
         },
@@ -261,7 +261,7 @@
           ],
           "imageLabel": "Vue en direct de la session",
           "image": {
-            "src": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/workflow.svg",
             "alt": "Styliste préparant des robes dans un studio"
           }
         },
@@ -276,7 +276,7 @@
           ],
           "imageLabel": "Live-Übersicht der Session",
           "image": {
-            "src": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/workflow.svg",
             "alt": "Stylistin bereitet Kleider im Studio vor"
           }
         },
@@ -291,7 +291,7 @@
           ],
           "imageLabel": "Vista en vivo de la sesión",
           "image": {
-            "src": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=1200&q=80",
+            "src": "images/workflow.svg",
             "alt": "Estilista preparando vestidos en el estudio"
           }
         }
