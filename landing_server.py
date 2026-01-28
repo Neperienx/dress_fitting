@@ -25,6 +25,20 @@ def escape(value: str | None) -> str:
     return html.escape(str(value))
 
 
+def resolve_image_src(src: str | None) -> str | None:
+    if not src:
+        return None
+    source_path = Path(src)
+    if source_path.suffix.lower() in {".png", ".jpg", ".jpeg"}:
+        return src
+    base = source_path.with_suffix("")
+    for suffix in (".png", ".jpg", ".jpeg"):
+        candidate = f"{base}{suffix}"
+        if (BASE_DIR / candidate).exists():
+            return candidate
+    return None
+
+
 def render_language_switcher(locales: dict, active_locale: str) -> str:
     links = []
     for key, locale in locales.items():
@@ -42,10 +56,11 @@ def render_hero(copy: dict) -> str:
     )
     image = copy.get("image") or {}
     image_html = ""
-    if image.get("src"):
+    image_src = resolve_image_src(image.get("src"))
+    if image_src:
         image_html = (
             f'<div class="hero-media">'
-            f'<img src="{escape(image.get("src"))}" '
+            f'<img src="{escape(image_src)}" '
             f'alt="{escape(image.get("alt"))}" loading="lazy" />'
             f"</div>"
         )
@@ -120,10 +135,11 @@ def render_split(copy: dict) -> str:
     )
     image = copy.get("image") or {}
     image_html = ""
-    if image.get("src"):
+    image_src = resolve_image_src(image.get("src"))
+    if image_src:
         image_html = (
             f'<div class="split-media">'
-            f'<img src="{escape(image.get("src"))}" '
+            f'<img src="{escape(image_src)}" '
             f'alt="{escape(image.get("alt"))}" loading="lazy" />'
             f"</div>"
         )
