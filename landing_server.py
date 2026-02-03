@@ -219,6 +219,100 @@ def render_cta(copy: dict) -> str:
     """
 
 
+def render_dashboard(copy: dict) -> str:
+    stores = copy.get("stores", [])
+    store_tiles = []
+    store_tiles.append(
+        """
+          <a class="store-tile add-tile" href="#create-store" aria-label="Create a new store">
+            <span class="store-plus">+</span>
+            <span class="store-label">{create_label}</span>
+          </a>
+        """.format(
+            create_label=escape(copy.get("createLabel")),
+        )
+    )
+    for store in stores:
+        store_tiles.append(
+            """
+              <button
+                class="store-tile"
+                type="button"
+                data-name="{name}"
+                data-location="{location}"
+                data-manager="{manager}"
+                data-invite="{invite}"
+              >
+                <span class="store-name">{name}</span>
+                <span class="store-location">{location}</span>
+              </button>
+            """.format(
+                name=escape(store.get("name")),
+                location=escape(store.get("location")),
+                manager=escape(store.get("manager")),
+                invite=escape(store.get("inviteCode")),
+            )
+        )
+    tiles_html = "\n".join(store_tiles)
+    return f"""
+      <div class="container dashboard" id="dashboard">
+        <div class="dashboard-header">
+          <div>
+            <p class="eyebrow">{escape(copy.get("eyebrow"))}</p>
+            <h2>{escape(copy.get("title"))}</h2>
+            <p class="lead">{escape(copy.get("subtitle"))}</p>
+          </div>
+          <div class="dashboard-note">
+            <p><strong>{escape(copy.get("noteTitle"))}</strong></p>
+            <p>{escape(copy.get("noteBody"))}</p>
+          </div>
+        </div>
+        <div class="dashboard-grid">
+          <div class="dashboard-panel">
+            <h3>{escape(copy.get("storesTitle"))}</h3>
+            <div class="store-grid">{tiles_html}</div>
+          </div>
+          <div class="dashboard-panel detail-panel">
+            <h3>{escape(copy.get("detailTitle"))}</h3>
+            <div class="store-detail" data-empty-text="{escape(copy.get("detailEmpty"))}">
+              <p class="store-detail-name">{escape(copy.get("detailEmpty"))}</p>
+              <p class="store-detail-location"></p>
+              <ul class="store-detail-meta"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-actions">
+          <div class="dashboard-panel" id="create-store">
+            <h3>{escape(copy.get("createTitle"))}</h3>
+            <p class="lead">{escape(copy.get("createDescription"))}</p>
+            <form class="store-form">
+              <label>
+                {escape(copy.get("createNameLabel"))}
+                <input type="text" placeholder="{escape(copy.get("createNamePlaceholder"))}" />
+              </label>
+              <label>
+                {escape(copy.get("createLocationLabel"))}
+                <input type="text" placeholder="{escape(copy.get("createLocationPlaceholder"))}" />
+              </label>
+              <button class="button" type="button">{escape(copy.get("createButton"))}</button>
+            </form>
+          </div>
+          <div class="dashboard-panel">
+            <h3>{escape(copy.get("joinTitle"))}</h3>
+            <p class="lead">{escape(copy.get("joinDescription"))}</p>
+            <form class="store-form">
+              <label>
+                {escape(copy.get("joinLabel"))}
+                <input type="text" placeholder="{escape(copy.get("joinPlaceholder"))}" />
+              </label>
+              <button class="button secondary" type="button">{escape(copy.get("joinButton"))}</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    """
+
+
 def render_footer(copy: dict) -> str:
     links = "".join(
         f'<a href="#">{escape(link)}</a>' for link in copy.get("links", [])
@@ -240,6 +334,7 @@ RENDERERS = {
     "steps": render_steps,
     "testimonial": render_testimonial,
     "cta": render_cta,
+    "dashboard": render_dashboard,
     "footer": render_footer,
 }
 
