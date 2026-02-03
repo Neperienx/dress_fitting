@@ -298,6 +298,185 @@
       }
     },
     {
+      "id": "dashboard",
+      "type": "dashboard",
+      "theme": "alt",
+      "content": {
+        "en": {
+          "eyebrow": "Account workspace",
+          "title": "Your admin dashboard, powered by Django authentication.",
+          "subtitle": "All users start as admins today, with roles ready to scale tomorrow.",
+          "noteTitle": "Secure user foundation",
+          "noteBody": "Built on Django's auth and a role-ready schema so you can add permissions later without rework.",
+          "storesTitle": "Stores",
+          "detailTitle": "Store overview",
+          "detailEmpty": "Select a store to see details.",
+          "createLabel": "Create store",
+          "createTitle": "Create a new store",
+          "createDescription": "Name and location are required. You'll get an invite code to share with teammates.",
+          "createNameLabel": "Store name",
+          "createNamePlaceholder": "Lace & Ivory Bridal",
+          "createLocationLabel": "Location",
+          "createLocationPlaceholder": "Austin, TX",
+          "createButton": "Create store",
+          "joinTitle": "Join an existing store",
+          "joinDescription": "Enter an invite code to link your account to a store.",
+          "joinLabel": "Invite code",
+          "joinPlaceholder": "INVITE-4F2A",
+          "joinButton": "Join store",
+          "stores": [
+            {
+              "name": "Marigold Bridal",
+              "location": "Nashville, TN",
+              "manager": "Lead stylist: Avery Carter",
+              "inviteCode": "MG-1023"
+            },
+            {
+              "name": "Studio Verity",
+              "location": "Seattle, WA",
+              "manager": "Lead stylist: Riley Chen",
+              "inviteCode": "SV-8841"
+            },
+            {
+              "name": "Rue Blanche",
+              "location": "Brooklyn, NY",
+              "manager": "Lead stylist: Alexis Dubois",
+              "inviteCode": "RB-5510"
+            }
+          ]
+        },
+        "fr": {
+          "eyebrow": "Account workspace",
+          "title": "Your admin dashboard, powered by Django authentication.",
+          "subtitle": "All users start as admins today, with roles ready to scale tomorrow.",
+          "noteTitle": "Secure user foundation",
+          "noteBody": "Built on Django's auth and a role-ready schema so you can add permissions later without rework.",
+          "storesTitle": "Stores",
+          "detailTitle": "Store overview",
+          "detailEmpty": "Select a store to see details.",
+          "createLabel": "Create store",
+          "createTitle": "Create a new store",
+          "createDescription": "Name and location are required. You'll get an invite code to share with teammates.",
+          "createNameLabel": "Store name",
+          "createNamePlaceholder": "Lace & Ivory Bridal",
+          "createLocationLabel": "Location",
+          "createLocationPlaceholder": "Austin, TX",
+          "createButton": "Create store",
+          "joinTitle": "Join an existing store",
+          "joinDescription": "Enter an invite code to link your account to a store.",
+          "joinLabel": "Invite code",
+          "joinPlaceholder": "INVITE-4F2A",
+          "joinButton": "Join store",
+          "stores": [
+            {
+              "name": "Marigold Bridal",
+              "location": "Nashville, TN",
+              "manager": "Lead stylist: Avery Carter",
+              "inviteCode": "MG-1023"
+            },
+            {
+              "name": "Studio Verity",
+              "location": "Seattle, WA",
+              "manager": "Lead stylist: Riley Chen",
+              "inviteCode": "SV-8841"
+            },
+            {
+              "name": "Rue Blanche",
+              "location": "Brooklyn, NY",
+              "manager": "Lead stylist: Alexis Dubois",
+              "inviteCode": "RB-5510"
+            }
+          ]
+        },
+        "de": {
+          "eyebrow": "Account workspace",
+          "title": "Your admin dashboard, powered by Django authentication.",
+          "subtitle": "All users start as admins today, with roles ready to scale tomorrow.",
+          "noteTitle": "Secure user foundation",
+          "noteBody": "Built on Django's auth and a role-ready schema so you can add permissions later without rework.",
+          "storesTitle": "Stores",
+          "detailTitle": "Store overview",
+          "detailEmpty": "Select a store to see details.",
+          "createLabel": "Create store",
+          "createTitle": "Create a new store",
+          "createDescription": "Name and location are required. You'll get an invite code to share with teammates.",
+          "createNameLabel": "Store name",
+          "createNamePlaceholder": "Lace & Ivory Bridal",
+          "createLocationLabel": "Location",
+          "createLocationPlaceholder": "Austin, TX",
+          "createButton": "Create store",
+          "joinTitle": "Join an existing store",
+          "joinDescription": "Enter an invite code to link your account to a store.",
+          "joinLabel": "Invite code",
+          "joinPlaceholder": "INVITE-4F2A",
+          "joinButton": "Join store",
+          "stores": [
+            {
+              "name": "Marigold Bridal",
+              "location": "Nashville, TN",
+              "manager": "Lead stylist: Avery Carter",
+              "inviteCode": "MG-1023"
+            },
+            {
+              "name": "Studio Verity",
+              "location": "Seattle, WA",
+              "manager": "Lead stylist: Riley Chen",
+              "inviteCode": "SV-8841"
+            },
+            {
+              "name": "Rue Blanche",
+              "location": "Brooklyn, NY",
+              "manager": "Lead stylist: Alexis Dubois",
+              "inviteCode": "RB-5510"
+            }
+          ]
+        },
+        "es": {
+          "eyebrow": "Account workspace",
+          "title": "Your admin dashboard, powered by Django authentication.",
+          "subtitle": "All users start as admins today, with roles ready to scale tomorrow.",
+          "noteTitle": "Secure user foundation",
+          "noteBody": "Built on Django's auth and a role-ready schema so you can add permissions later without rework.",
+          "storesTitle": "Stores",
+          "detailTitle": "Store overview",
+          "detailEmpty": "Select a store to see details.",
+          "createLabel": "Create store",
+          "createTitle": "Create a new store",
+          "createDescription": "Name and location are required. You'll get an invite code to share with teammates.",
+          "createNameLabel": "Store name",
+          "createNamePlaceholder": "Lace & Ivory Bridal",
+          "createLocationLabel": "Location",
+          "createLocationPlaceholder": "Austin, TX",
+          "createButton": "Create store",
+          "joinTitle": "Join an existing store",
+          "joinDescription": "Enter an invite code to link your account to a store.",
+          "joinLabel": "Invite code",
+          "joinPlaceholder": "INVITE-4F2A",
+          "joinButton": "Join store",
+          "stores": [
+            {
+              "name": "Marigold Bridal",
+              "location": "Nashville, TN",
+              "manager": "Lead stylist: Avery Carter",
+              "inviteCode": "MG-1023"
+            },
+            {
+              "name": "Studio Verity",
+              "location": "Seattle, WA",
+              "manager": "Lead stylist: Riley Chen",
+              "inviteCode": "SV-8841"
+            },
+            {
+              "name": "Rue Blanche",
+              "location": "Brooklyn, NY",
+              "manager": "Lead stylist: Alexis Dubois",
+              "inviteCode": "RB-5510"
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "steps",
       "type": "steps",
       "theme": "alt",
