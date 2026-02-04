@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import html
 import json
+import secrets
+import sqlite3
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 from socketserver import TCPServer
@@ -12,6 +15,64 @@ from urllib.parse import parse_qs, urlparse
 BASE_DIR = Path(__file__).resolve().parent
 CONTENT_PATH = BASE_DIR / "landing-content.json"
 TEMPLATE_PATH = BASE_DIR / "index.html"
+DB_PATH = BASE_DIR / "stores.db"
+
+
+def init_db() -> None:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS stores (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL,
+              location TEXT NOT NULL,
+              owner_email TEXT NOT NULL,
+              invite_code TEXT NOT NULL,
+              created_at TEXT NOT NULL
+            )
+            """
+        )
+
+
+def generate_invite_code() -> str:
+    return secrets.token_hex(3).upper()
+
+
+def fetch_stores(owner_email: str) -> list[dict]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT id, name, location, owner_email, invite_code, created_at
+            FROM stores
+            WHERE owner_email = ?
+            ORDER BY id DESC
+            """,
+            (owner_email,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def create_store(name: str, location: str, owner_email: str) -> dict:
+    invite_code = generate_invite_code()
+    created_at = datetime.now(timezone.utc).isoformat()
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO stores (name, location, owner_email, invite_code, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (name, location, owner_email, invite_code, created_at),
+        )
+        store_id = cursor.lastrowid
+    return {
+        "id": store_id,
+        "name": name,
+        "location": location,
+        "owner_email": owner_email,
+        "invite_code": invite_code,
+        "created_at": created_at,
+    }
 
 
 def load_content() -> dict:
@@ -366,16 +427,34 @@ def render_dashboard(copy: dict) -> str:
           <div class="dashboard-panel" id="create-store">
             <h3>{escape(copy.get("createTitle"))}</h3>
             <p class="lead">{escape(copy.get("createDescription"))}</p>
-            <form class="store-form">
+            <form class="store-form" data-store-form>
               <label>
                 {escape(copy.get("createNameLabel"))}
-                <input type="text" placeholder="{escape(copy.get("createNamePlaceholder"))}" />
+                <input
+                  type="text"
+                  placeholder="{escape(copy.get("createNamePlaceholder"))}"
+                  data-store-name
+                  required
+                />
               </label>
               <label>
                 {escape(copy.get("createLocationLabel"))}
-                <input type="text" placeholder="{escape(copy.get("createLocationPlaceholder"))}" />
+                <input
+                  type="text"
+                  placeholder="{escape(copy.get("createLocationPlaceholder"))}"
+                  data-store-location
+                  required
+                />
               </label>
-              <button class="button" type="button">{escape(copy.get("createButton"))}</button>
+              <button class="button" type="button" data-store-submit>
+                {escape(copy.get("createButton"))}
+              </button>
+              <p
+                class="auth-message form-message"
+                data-store-message
+                role="status"
+                aria-live="polite"
+              ></p>
             </form>
           </div>
           <div class="dashboard-panel">
@@ -465,8 +544,70 @@ def render_page(locale: str, page_id: str) -> str:
 
 
 class LandingHandler(SimpleHTTPRequestHandler):
+    def do_POST(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path == "/api/stores":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = 0
+            payload = self.rfile.read(length).decode("utf-8") if length else ""
+            try:
+                data = json.loads(payload) if payload else {}
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Invalid JSON payload."}).encode("utf-8")
+                )
+                return
+
+            name = (data.get("name") or "").strip()
+            location = (data.get("location") or "").strip()
+            owner_email = (data.get("owner_email") or "").strip().lower()
+            if not name or not location or not owner_email:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {"error": "name, location, and owner_email are required."}
+                    ).encode("utf-8")
+                )
+                return
+
+            store = create_store(name, location, owner_email)
+            self.send_response(201)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(store).encode("utf-8"))
+            return
+
+        self.send_response(404)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps({"error": "Not found."}).encode("utf-8"))
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/stores":
+            query = parse_qs(parsed.query)
+            owner_email = (query.get("owner", [""])[0]).strip().lower()
+            if not owner_email:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "owner query param is required."}).encode("utf-8")
+                )
+                return
+            stores = fetch_stores(owner_email)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"stores": stores}).encode("utf-8"))
+            return
         if parsed.path in {"", "/"}:
             query = parse_qs(parsed.query)
             locale = query.get("lang", [""])[0]
@@ -498,6 +639,7 @@ class LandingHandler(SimpleHTTPRequestHandler):
 
 
 def run(port: int) -> None:
+    init_db()
     with TCPServer(("", port), LandingHandler) as httpd:
         print(f"Landing page running at http://localhost:{port}")
         httpd.serve_forever()
