@@ -39,13 +39,13 @@ def resolve_image_src(src: str | None) -> str | None:
     return None
 
 
-def render_language_switcher(locales: dict, active_locale: str) -> str:
+def render_language_switcher(locales: dict, active_locale: str, base_path: str) -> str:
     links = []
     for key, locale in locales.items():
         label = escape(locale.get("label", key))
         active_class = " active" if key == active_locale else ""
         links.append(
-            f'<a class="language-link{active_class}" href="/?lang={escape(key)}">{label}</a>'
+            f'<a class="language-link{active_class}" href="{base_path}?lang={escape(key)}">{label}</a>'
         )
     return "".join(links)
 
@@ -219,6 +219,40 @@ def render_cta(copy: dict) -> str:
     """
 
 
+def render_login(copy: dict) -> str:
+    return f"""
+      <div class="container login-shell">
+        <div class="login-card">
+          <p class="eyebrow">{escape(copy.get("eyebrow"))}</p>
+          <h1>{escape(copy.get("title"))}</h1>
+          <p class="lead">{escape(copy.get("subtitle"))}</p>
+        </div>
+        <div class="login-card">
+          <h2>{escape(copy.get("formTitle"))}</h2>
+          <form class="store-form login-form">
+            <label>
+              {escape(copy.get("emailLabel"))}
+              <input type="email" placeholder="{escape(copy.get("emailPlaceholder"))}" />
+            </label>
+            <label>
+              {escape(copy.get("passwordLabel"))}
+              <input type="password" placeholder="{escape(copy.get("passwordPlaceholder"))}" />
+            </label>
+            <div class="login-actions">
+              <button class="button" type="button">{escape(copy.get("primaryButton"))}</button>
+              <a class="text-link" href="#">{escape(copy.get("secondaryLink"))}</a>
+            </div>
+          </form>
+        </div>
+        <div class="login-card support-card">
+          <h3>{escape(copy.get("supportTitle"))}</h3>
+          <p class="lead">{escape(copy.get("supportBody"))}</p>
+          <a class="button secondary" href="#">{escape(copy.get("supportButton"))}</a>
+        </div>
+      </div>
+    """
+
+
 def render_dashboard(copy: dict) -> str:
     stores = copy.get("stores", [])
     store_tiles = []
@@ -334,15 +368,19 @@ RENDERERS = {
     "steps": render_steps,
     "testimonial": render_testimonial,
     "cta": render_cta,
+    "login": render_login,
     "dashboard": render_dashboard,
     "footer": render_footer,
 }
 
 
-def build_sections(content: dict, locale: str) -> str:
+def build_sections(content: dict, locale: str, page_id: str) -> str:
     sections = []
     default_locale = content.get("defaultLocale")
+    page_blocks = content.get("pages", {}).get(page_id)
     for block in content.get("blocks", []):
+        if page_blocks and block.get("id") not in page_blocks:
+            continue
         copy = block.get("content", {}).get(locale) or block.get("content", {}).get(
             default_locale
         )
@@ -355,17 +393,24 @@ def build_sections(content: dict, locale: str) -> str:
     return "".join(sections)
 
 
-def render_page(locale: str) -> str:
+def render_page(locale: str, page_id: str) -> str:
     content = load_content()
     default_locale = content.get("defaultLocale")
     if locale not in content.get("locales", {}):
         locale = default_locale
-    language_switcher = render_language_switcher(content.get("locales", {}), locale)
-    sections = build_sections(content, locale)
+    base_path = "/" if page_id == "landing" else f"/{page_id}"
+    language_switcher = render_language_switcher(content.get("locales", {}), locale, base_path)
+    sections = build_sections(content, locale, page_id)
+    page_titles = {
+        "landing": "Bridal Studio Sessions — Dress Shop Platform",
+        "login": "Log in — Bridal Studio Sessions",
+        "stores": "Stores — Bridal Studio Sessions",
+    }
+    page_title = page_titles.get(page_id, page_titles["landing"])
     template_text = TEMPLATE_PATH.read_text(encoding="utf-8")
     template = Template(template_text)
     return template.safe_substitute(
-        page_title="Bridal Studio Sessions — Dress Shop Platform",
+        page_title=page_title,
         language_switcher=language_switcher,
         sections=sections,
         html_lang=locale,
@@ -378,7 +423,25 @@ class LandingHandler(SimpleHTTPRequestHandler):
         if parsed.path in {"", "/"}:
             query = parse_qs(parsed.query)
             locale = query.get("lang", [""])[0]
-            page = render_page(locale)
+            page = render_page(locale, "landing")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(page.encode("utf-8"))
+            return
+        if parsed.path in {"/login", "/login/"}:
+            query = parse_qs(parsed.query)
+            locale = query.get("lang", [""])[0]
+            page = render_page(locale, "login")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(page.encode("utf-8"))
+            return
+        if parsed.path in {"/stores", "/stores/"}:
+            query = parse_qs(parsed.query)
+            locale = query.get("lang", [""])[0]
+            page = render_page(locale, "stores")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()

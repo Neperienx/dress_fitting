@@ -278,6 +278,35 @@ h1 {
   box-shadow: var(--shadow);
 }
 
+.login-shell {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: start;
+}
+
+.login-card {
+  padding: 2rem;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 1.2rem;
+}
+
+.login-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.text-link {
+  color: var(--primary);
+  font-weight: 600;
+}
+
 .dashboard {
   display: grid;
   gap: 2.5rem;
