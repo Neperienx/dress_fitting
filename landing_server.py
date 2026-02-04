@@ -227,27 +227,74 @@ def render_login(copy: dict) -> str:
           <h1>{escape(copy.get("title"))}</h1>
           <p class="lead">{escape(copy.get("subtitle"))}</p>
         </div>
-        <div class="login-card">
-          <h2>{escape(copy.get("formTitle"))}</h2>
-          <form class="store-form login-form">
-            <label>
-              {escape(copy.get("emailLabel"))}
-              <input type="email" placeholder="{escape(copy.get("emailPlaceholder"))}" />
-            </label>
-            <label>
-              {escape(copy.get("passwordLabel"))}
-              <input type="password" placeholder="{escape(copy.get("passwordPlaceholder"))}" />
-            </label>
-            <div class="login-actions">
-              <button class="button" type="button">{escape(copy.get("primaryButton"))}</button>
-              <a class="text-link" href="#">{escape(copy.get("secondaryLink"))}</a>
-            </div>
-          </form>
-        </div>
-        <div class="login-card support-card">
-          <h3>{escape(copy.get("supportTitle"))}</h3>
-          <p class="lead">{escape(copy.get("supportBody"))}</p>
-          <a class="button secondary" href="#">{escape(copy.get("supportButton"))}</a>
+        <div class="login-card auth-card" data-auth-card>
+          <div class="auth-panel" data-auth-panel="login">
+            <h2>{escape(copy.get("formTitle"))}</h2>
+            <form class="store-form login-form" data-auth-form="login">
+              <label>
+                {escape(copy.get("emailLabel"))}
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="{escape(copy.get("emailPlaceholder"))}"
+                  autocomplete="email"
+                  required
+                />
+              </label>
+              <label>
+                {escape(copy.get("passwordLabel"))}
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="{escape(copy.get("passwordPlaceholder"))}"
+                  autocomplete="current-password"
+                  required
+                />
+              </label>
+              <div class="login-actions">
+                <button class="button" type="submit">{escape(copy.get("primaryButton"))}</button>
+                <button class="text-link" type="button" data-auth-toggle="signup">
+                  {escape(copy.get("supportButton"))}
+                </button>
+              </div>
+              <p class="auth-message" data-auth-message role="status" aria-live="polite"></p>
+            </form>
+          </div>
+          <div class="auth-panel is-hidden" data-auth-panel="signup">
+            <h2>{escape(copy.get("supportTitle"))}</h2>
+            <p class="lead">{escape(copy.get("supportBody"))}</p>
+            <form class="store-form login-form" data-auth-form="signup">
+              <label>
+                {escape(copy.get("emailLabel"))}
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="{escape(copy.get("emailPlaceholder"))}"
+                  autocomplete="email"
+                  required
+                />
+              </label>
+              <label>
+                {escape(copy.get("passwordLabel"))}
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="{escape(copy.get("passwordPlaceholder"))}"
+                  autocomplete="new-password"
+                  required
+                />
+              </label>
+              <div class="login-actions">
+                <button class="button secondary" type="submit">
+                  {escape(copy.get("supportButton"))}
+                </button>
+                <button class="text-link" type="button" data-auth-toggle="login">
+                  {escape(copy.get("primaryButton"))}
+                </button>
+              </div>
+              <p class="auth-message" data-auth-message role="status" aria-live="polite"></p>
+            </form>
+          </div>
         </div>
       </div>
     """

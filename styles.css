@@ -295,6 +295,29 @@ h1 {
   gap: 1.2rem;
 }
 
+.auth-panel {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.auth-panel.is-hidden {
+  display: none;
+}
+
+.auth-message {
+  margin: 0;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.auth-message.is-error {
+  color: #b42318;
+}
+
+.auth-message.is-success {
+  color: #067647;
+}
+
 .login-actions {
   display: flex;
   align-items: center;
