@@ -117,22 +117,22 @@ if (authCard) {
   if (loginForm) {
     loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const email = loginForm.email.value.trim().toLowerCase();
+      const username = loginForm.username.value.trim().toLowerCase();
       const password = loginForm.password.value;
-      if (!email || !password) {
-        setMessage(panels.login, 'Please enter both your email and password.', 'error');
+      if (!username || !password) {
+        setMessage(panels.login, 'Please enter both your username and password.', 'error');
         return;
       }
       const users = readUsers();
-      if (!users[email]) {
+      if (!users[username]) {
         setMessage(panels.login, 'No account found. Create one to get started.', 'error');
         return;
       }
-      if (users[email] !== password) {
+      if (users[username] !== password) {
         setMessage(panels.login, 'That password does not match. Try again.', 'error');
         return;
       }
-      localStorage.setItem(sessionKey, email);
+      localStorage.setItem(sessionKey, username);
       setMessage(panels.login, 'Success! Redirecting to your dashboard...', 'success');
       window.location.assign('/stores');
     });
@@ -141,21 +141,21 @@ if (authCard) {
   if (signupForm) {
     signupForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const email = signupForm.email.value.trim().toLowerCase();
+      const username = signupForm.username.value.trim().toLowerCase();
       const password = signupForm.password.value;
-      if (!email || !password) {
-        setMessage(panels.signup, 'Please enter an email and password to continue.', 'error');
+      if (!username || !password) {
+        setMessage(panels.signup, 'Please enter a username and password to continue.', 'error');
         return;
       }
       const users = readUsers();
-      if (users[email]) {
-        setMessage(panels.signup, 'This email already exists. Log in instead.', 'error');
+      if (users[username]) {
+        setMessage(panels.signup, 'This username already exists. Log in instead.', 'error');
         return;
       }
-      users[email] = password;
+      users[username] = password;
       writeUsers(users);
       setMessage(panels.signup, 'Account created! You can log in now.', 'success');
-      loginForm.email.value = email;
+      loginForm.username.value = username;
       loginForm.password.value = '';
       showPanel('login');
     });
