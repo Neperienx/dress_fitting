@@ -32,23 +32,37 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS store_members (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              store_id INTEGER NOT NULL,
+              member_email TEXT NOT NULL,
+              joined_at TEXT NOT NULL,
+              UNIQUE(store_id, member_email),
+              FOREIGN KEY(store_id) REFERENCES stores(id)
+            )
+            """
+        )
 
 
 def generate_invite_code() -> str:
     return secrets.token_hex(3).upper()
 
 
-def fetch_stores(owner_email: str) -> list[dict]:
+def fetch_stores(user_email: str) -> list[dict]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
             """
-            SELECT id, name, location, owner_email, invite_code, created_at
+            SELECT DISTINCT stores.id, stores.name, stores.location, stores.owner_email,
+                            stores.invite_code, stores.created_at
             FROM stores
-            WHERE owner_email = ?
+            LEFT JOIN store_members ON stores.id = store_members.store_id
+            WHERE stores.owner_email = ? OR store_members.member_email = ?
             ORDER BY id DESC
             """,
-            (owner_email,),
+            (user_email, user_email),
         ).fetchall()
     return [dict(row) for row in rows]
 
@@ -73,6 +87,34 @@ def create_store(name: str, location: str, owner_email: str) -> dict:
         "invite_code": invite_code,
         "created_at": created_at,
     }
+
+
+def join_store(invite_code: str, member_email: str) -> dict | None:
+    invite_code = invite_code.strip().upper()
+    member_email = member_email.strip().lower()
+    if not invite_code or not member_email:
+        return None
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        store = conn.execute(
+            """
+            SELECT id, name, location, owner_email, invite_code, created_at
+            FROM stores
+            WHERE invite_code = ?
+            """,
+            (invite_code,),
+        ).fetchone()
+        if not store:
+            return None
+        joined_at = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO store_members (store_id, member_email, joined_at)
+            VALUES (?, ?, ?)
+            """,
+            (store["id"], member_email, joined_at),
+        )
+    return dict(store)
 
 
 def load_content() -> dict:
@@ -460,12 +502,25 @@ def render_dashboard(copy: dict) -> str:
           <div class="dashboard-panel">
             <h3>{escape(copy.get("joinTitle"))}</h3>
             <p class="lead">{escape(copy.get("joinDescription"))}</p>
-            <form class="store-form">
+            <form class="store-form" data-store-join-form>
               <label>
                 {escape(copy.get("joinLabel"))}
-                <input type="text" placeholder="{escape(copy.get("joinPlaceholder"))}" />
+                <input
+                  type="text"
+                  placeholder="{escape(copy.get("joinPlaceholder"))}"
+                  data-store-join-code
+                  required
+                />
               </label>
-              <button class="button secondary" type="button">{escape(copy.get("joinButton"))}</button>
+              <button class="button secondary" type="button" data-store-join-submit>
+                {escape(copy.get("joinButton"))}
+              </button>
+              <p
+                class="auth-message form-message"
+                data-store-join-message
+                role="status"
+                aria-live="polite"
+              ></p>
             </form>
           </div>
         </div>
@@ -579,6 +634,51 @@ class LandingHandler(SimpleHTTPRequestHandler):
 
             store = create_store(name, location, owner_email)
             self.send_response(201)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(store).encode("utf-8"))
+            return
+        if parsed.path == "/api/stores/join":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = 0
+            payload = self.rfile.read(length).decode("utf-8") if length else ""
+            try:
+                data = json.loads(payload) if payload else {}
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Invalid JSON payload."}).encode("utf-8")
+                )
+                return
+
+            invite_code = (data.get("invite_code") or "").strip().upper()
+            member_email = (data.get("member_email") or "").strip().lower()
+            if not invite_code or not member_email:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {"error": "invite_code and member_email are required."}
+                    ).encode("utf-8")
+                )
+                return
+
+            store = join_store(invite_code, member_email)
+            if not store:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Invite code not found."}).encode("utf-8")
+                )
+                return
+
+            self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(store).encode("utf-8"))
