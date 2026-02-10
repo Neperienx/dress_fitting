@@ -60,7 +60,7 @@ def fetch_stores(user_email: str) -> list[dict]:
             FROM stores
             LEFT JOIN store_members ON stores.id = store_members.store_id
             WHERE stores.owner_email = ? OR store_members.member_email = ?
-            ORDER BY id DESC
+            ORDER BY stores.id DESC
             """,
             (user_email, user_email),
         ).fetchall()

@@ -22,7 +22,17 @@
         <div class="header-actions">
           <nav class="language-switcher">$language_switcher</nav>
           <a class="button secondary login-button" href="/stores">Stores</a>
-          <a class="button login-button" href="/login">Log in</a>
+          <a class="button login-button" href="/login" data-auth-login-link>Log in</a>
+          <div class="user-menu is-hidden" data-user-menu>
+            <button class="button user-menu-trigger" type="button" data-user-menu-trigger>
+              <span data-user-menu-name></span>
+            </button>
+            <div class="user-menu-panel is-hidden" data-user-menu-panel>
+              <button class="text-link user-menu-logout" type="button" data-auth-logout>
+                Log out
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </header>

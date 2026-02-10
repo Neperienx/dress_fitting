@@ -5,6 +5,71 @@ const detailMeta = document.querySelector('.store-detail-meta');
 const storeGrid = document.querySelector('.store-grid');
 const sessionKey = 'bridalStudioCurrentUser';
 const usersKey = 'bridalStudioUsers';
+const loginLink = document.querySelector('[data-auth-login-link]');
+const userMenu = document.querySelector('[data-user-menu]');
+const userMenuTrigger = document.querySelector('[data-user-menu-trigger]');
+const userMenuName = document.querySelector('[data-user-menu-name]');
+const userMenuPanel = document.querySelector('[data-user-menu-panel]');
+const logoutButton = document.querySelector('[data-auth-logout]');
+
+const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
+
+const closeUserMenu = () => {
+  if (!userMenuPanel) {
+    return;
+  }
+  userMenuPanel.classList.add('is-hidden');
+};
+
+const updateHeaderAuth = () => {
+  const currentUser = getSessionUser();
+  const isLoggedIn = Boolean(currentUser);
+
+  if (loginLink) {
+    loginLink.classList.toggle('is-hidden', isLoggedIn);
+  }
+  if (userMenu) {
+    userMenu.classList.toggle('is-hidden', !isLoggedIn);
+  }
+  if (userMenuName) {
+    userMenuName.textContent = currentUser;
+  }
+  if (!isLoggedIn) {
+    closeUserMenu();
+  }
+};
+
+if (userMenuTrigger) {
+  userMenuTrigger.addEventListener('click', () => {
+    if (!userMenuPanel) {
+      return;
+    }
+    userMenuPanel.classList.toggle('is-hidden');
+  });
+}
+
+document.addEventListener('click', (event) => {
+  if (!userMenu) {
+    return;
+  }
+  if (!userMenu.contains(event.target)) {
+    closeUserMenu();
+  }
+});
+
+if (logoutButton) {
+  logoutButton.addEventListener('click', () => {
+    localStorage.removeItem(sessionKey);
+    updateHeaderAuth();
+    if (window.location.pathname === '/stores' || window.location.pathname === '/stores/') {
+      window.location.assign('/login');
+      return;
+    }
+    window.location.reload();
+  });
+}
+
+updateHeaderAuth();
 
 const renderDetails = (tile) => {
   if (!detailPanel || !detailName || !detailLocation || !detailMeta) {
@@ -201,7 +266,7 @@ if (storeForm && storeGrid) {
     }
   };
 
-  const getCurrentUser = () => (localStorage.getItem(sessionKey) || '').trim();
+  const getCurrentUser = () => getSessionUser();
 
   const buildStoreTile = (store) => {
     const tile = document.createElement('button');
