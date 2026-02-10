@@ -488,24 +488,13 @@ h1 {
 
 
 .store-detail-photo-wrap {
-  width: 100%;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: #fff;
+  display: none;
 }
-
-.store-detail-photo {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-}
-
 
 .store-detail-miniatures {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 0.45rem;
 }
 
 .store-miniature-button {
@@ -526,6 +515,47 @@ h1 {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 8px;
+}
+
+
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(12, 9, 11, 0.82);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.photo-lightbox-content {
+  position: relative;
+  max-width: min(90vw, 980px);
+  max-height: 90vh;
+}
+
+.photo-lightbox-image {
+  display: block;
+  width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.photo-lightbox-close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(12, 9, 11, 0.75);
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .store-form button:disabled {
