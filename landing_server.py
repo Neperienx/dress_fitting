@@ -335,12 +335,12 @@ def render_login(copy: dict) -> str:
             <h2>{escape(copy.get("formTitle"))}</h2>
             <form class="store-form login-form" data-auth-form="login">
               <label>
-                {escape(copy.get("emailLabel"))}
+                {escape(copy.get("usernameLabel"))}
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="{escape(copy.get("emailPlaceholder"))}"
-                  autocomplete="email"
+                  type="text"
+                  name="username"
+                  placeholder="{escape(copy.get("usernamePlaceholder"))}"
+                  autocomplete="username"
                   required
                 />
               </label>
@@ -368,12 +368,12 @@ def render_login(copy: dict) -> str:
             <p class="lead">{escape(copy.get("supportBody"))}</p>
             <form class="store-form login-form" data-auth-form="signup">
               <label>
-                {escape(copy.get("emailLabel"))}
+                {escape(copy.get("usernameLabel"))}
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="{escape(copy.get("emailPlaceholder"))}"
-                  autocomplete="email"
+                  type="text"
+                  name="username"
+                  placeholder="{escape(copy.get("usernamePlaceholder"))}"
+                  autocomplete="username"
                   required
                 />
               </label>

@@ -371,15 +371,15 @@
           "title": "Log in to manage your bridal studio.",
           "subtitle": "Access stylist notes, appointment history, and the shared recap your brides keep revisiting.",
           "formTitle": "Boutique login",
-          "emailLabel": "Work email",
-          "emailPlaceholder": "you@bridalstudio.com",
           "passwordLabel": "Password",
           "passwordPlaceholder": "Enter your password",
           "primaryButton": "Log in",
           "secondaryLink": "Forgot password?",
           "supportTitle": "New to Bridal Studio Sessions?",
           "supportBody": "Create your boutique profile and invite your team to start tailoring every appointment.",
-          "supportButton": "Create an account"
+          "supportButton": "Create an account",
+          "usernameLabel": "Username",
+          "usernamePlaceholder": "bridalmanager"
         }
       }
     },
