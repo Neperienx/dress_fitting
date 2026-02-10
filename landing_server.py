@@ -54,6 +54,17 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS store_dress_photos (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              store_id INTEGER NOT NULL,
+              photo_path TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              FOREIGN KEY(store_id) REFERENCES stores(id)
+            )
+            """
+        )
 
 
 def generate_invite_code() -> str:
@@ -68,8 +79,27 @@ def normalize_photo_path(photo_path: str | None) -> str:
 
 def normalize_store_payload(store: dict) -> dict:
     payload = dict(store)
-    payload["dress_photo_url"] = normalize_photo_path(payload.get("dress_photo_path"))
+    dress_photo_urls = payload.get("dress_photo_urls") or []
+    if not dress_photo_urls and payload.get("dress_photo_path"):
+        dress_photo_urls = [payload.get("dress_photo_path")]
+    payload["dress_photo_urls"] = dress_photo_urls
+    payload["dress_photo_url"] = normalize_photo_path(
+        dress_photo_urls[0] if dress_photo_urls else payload.get("dress_photo_path")
+    )
     return payload
+
+
+def fetch_store_dress_photos(conn: sqlite3.Connection, store_id: int) -> list[str]:
+    rows = conn.execute(
+        """
+        SELECT photo_path
+        FROM store_dress_photos
+        WHERE store_id = ?
+        ORDER BY created_at DESC, id DESC
+        """,
+        (store_id,),
+    ).fetchall()
+    return [row[0] for row in rows]
 
 
 def fetch_stores(user_email: str) -> list[dict]:
@@ -86,7 +116,12 @@ def fetch_stores(user_email: str) -> list[dict]:
             """,
             (user_email, user_email),
         ).fetchall()
-    return [normalize_store_payload(dict(row)) for row in rows]
+        stores = []
+        for row in rows:
+            store = dict(row)
+            store["dress_photo_urls"] = fetch_store_dress_photos(conn, store["id"])
+            stores.append(normalize_store_payload(store))
+    return stores
 
 
 def create_store(name: str, location: str, owner_email: str) -> dict:
@@ -107,6 +142,7 @@ def create_store(name: str, location: str, owner_email: str) -> dict:
         "location": location,
         "owner_email": owner_email,
         "dress_photo_path": None,
+        "dress_photo_urls": [],
         "dress_photo_url": DEFAULT_DRESS_PHOTO_PATH,
         "invite_code": invite_code,
         "created_at": created_at,
@@ -138,7 +174,11 @@ def join_store(invite_code: str, member_email: str) -> dict | None:
             """,
             (store["id"], member_email, joined_at),
         )
-    return normalize_store_payload(dict(store))
+        normalized_store = dict(store)
+        normalized_store["dress_photo_urls"] = fetch_store_dress_photos(
+            conn, normalized_store["id"]
+        )
+    return normalize_store_payload(normalized_store)
 
 
 def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str | None:
@@ -146,10 +186,19 @@ def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str 
     if extension not in ALLOWED_DRESS_EXTENSIONS:
         return None
     STORE_DRESS_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
-    relative_path = Path("images") / "store_dresses" / f"store-{store_id}{extension}"
+    unique_suffix = secrets.token_hex(8)
+    relative_path = Path("images") / "store_dresses" / f"store-{store_id}-{unique_suffix}{extension}"
     full_path = BASE_DIR / relative_path
     full_path.write_bytes(content)
+    created_at = datetime.now(timezone.utc).isoformat()
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            INSERT INTO store_dress_photos (store_id, photo_path, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (store_id, str(relative_path), created_at),
+        )
         conn.execute(
             "UPDATE stores SET dress_photo_path = ? WHERE id = ?",
             (str(relative_path), store_id),
@@ -168,9 +217,11 @@ def fetch_store_by_id(store_id: int) -> dict | None:
             """,
             (store_id,),
         ).fetchone()
-    if not store:
-        return None
-    return normalize_store_payload(dict(store))
+        if not store:
+            return None
+        payload = dict(store)
+        payload["dress_photo_urls"] = fetch_store_dress_photos(conn, store_id)
+    return normalize_store_payload(payload)
 
 
 def load_content() -> dict:
@@ -531,6 +582,7 @@ def render_dashboard(copy: dict) -> str:
               <p class="store-detail-name">{escape(copy.get("detailEmpty"))}</p>
               <p class="store-detail-location"></p>
               <ul class="store-detail-meta"></ul>
+              <div class="store-detail-miniatures" data-dress-miniatures></div>
               <form class="store-form" data-dress-photo-form>
                 <label>
                   {escape(copy.get("photoUploadLabel") or "Dress photo")}

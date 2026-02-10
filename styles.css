@@ -501,6 +501,33 @@ h1 {
   object-fit: cover;
 }
 
+
+.store-detail-miniatures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 0.5rem;
+}
+
+.store-miniature-button {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
+.store-miniature-button.is-selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(139, 76, 112, 0.2);
+}
+
+.store-miniature-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .store-form button:disabled {
   opacity: 0.5;
   cursor: not-allowed;

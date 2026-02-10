@@ -3,6 +3,7 @@ const detailName = document.querySelector('.store-detail-name');
 const detailLocation = document.querySelector('.store-detail-location');
 const detailMeta = document.querySelector('.store-detail-meta');
 const detailPhoto = document.querySelector('.store-detail-photo');
+const detailMiniatures = document.querySelector('[data-dress-miniatures]');
 const dressPhotoForm = document.querySelector('[data-dress-photo-form]');
 const dressPhotoInput = dressPhotoForm?.querySelector('[data-dress-photo-input]');
 const dressPhotoSubmit = dressPhotoForm?.querySelector('[data-dress-photo-submit]');
@@ -104,6 +105,56 @@ if (logoutButton) {
 
 updateHeaderAuth();
 
+
+const getStorePhotoUrls = (tile, defaultPhoto) => {
+  if (!tile) {
+    return [defaultPhoto];
+  }
+  const photoUrlsRaw = tile.dataset.photoUrls;
+  if (photoUrlsRaw) {
+    try {
+      const parsed = JSON.parse(photoUrlsRaw);
+      if (Array.isArray(parsed) && parsed.length) {
+        return parsed;
+      }
+    } catch (error) {
+      // Ignore invalid payloads.
+    }
+  }
+  const singlePhoto = tile.dataset.photoUrl;
+  return singlePhoto ? [singlePhoto] : [defaultPhoto];
+};
+
+const renderMiniatures = (photoUrls, selectedPhoto) => {
+  if (!detailMiniatures) {
+    return;
+  }
+  detailMiniatures.innerHTML = '';
+  photoUrls.forEach((photoUrl, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.classList.add('store-miniature-button');
+    if (photoUrl === selectedPhoto) {
+      button.classList.add('is-selected');
+    }
+
+    const image = document.createElement('img');
+    image.classList.add('store-miniature-image');
+    image.src = photoUrl;
+    image.alt = `Dress ${index + 1}`;
+
+    button.appendChild(image);
+    button.addEventListener('click', () => {
+      if (!detailPhoto) {
+        return;
+      }
+      detailPhoto.src = photoUrl;
+      renderMiniatures(photoUrls, photoUrl);
+    });
+    detailMiniatures.appendChild(button);
+  });
+};
+
 const renderDetails = (tile) => {
   if (!detailPanel || !detailName || !detailLocation || !detailMeta) {
     return;
@@ -118,6 +169,7 @@ const renderDetails = (tile) => {
     if (detailPhoto) {
       detailPhoto.src = defaultPhoto;
     }
+    renderMiniatures([defaultPhoto], defaultPhoto);
     setDressPhotoFormState(null);
     return;
   }
@@ -126,7 +178,8 @@ const renderDetails = (tile) => {
   const location = tile.dataset.location;
   const manager = tile.dataset.manager;
   const invite = tile.dataset.invite;
-  const photoUrl = tile.dataset.photoUrl || defaultPhoto;
+  const photoUrls = getStorePhotoUrls(tile, defaultPhoto);
+  const photoUrl = photoUrls[0] || defaultPhoto;
 
   detailName.textContent = name;
   detailLocation.textContent = location;
@@ -134,6 +187,7 @@ const renderDetails = (tile) => {
   if (detailPhoto) {
     detailPhoto.src = photoUrl;
   }
+  renderMiniatures(photoUrls, photoUrl);
 
   const managerItem = document.createElement('li');
   managerItem.textContent = manager;
@@ -190,9 +244,11 @@ if (dressPhotoForm) {
 
       const store = await response.json();
       const photoUrl = store.dress_photo_url;
+      const photoUrls = Array.isArray(store.dress_photo_urls) ? store.dress_photo_urls : [];
       const tile = storeGrid?.querySelector(`[data-store-id="${storeId}"]`);
       if (tile && photoUrl) {
         tile.dataset.photoUrl = photoUrl;
+        tile.dataset.photoUrls = JSON.stringify(photoUrls);
       }
       if (tile && detailName?.textContent === tile.dataset.name) {
         renderDetails(tile);
@@ -369,6 +425,8 @@ if (storeForm && storeGrid) {
     tile.dataset.location = store.location;
     tile.dataset.manager = `Owner: ${store.owner_email}`;
     tile.dataset.invite = store.invite_code;
+    const photoUrls = Array.isArray(store.dress_photo_urls) ? store.dress_photo_urls : [];
+    tile.dataset.photoUrls = JSON.stringify(photoUrls);
     tile.dataset.photoUrl = store.dress_photo_url || detailPanel?.dataset.defaultPhoto || 'images/default-dress.svg';
     if (store.id) {
       tile.dataset.storeId = store.id;
