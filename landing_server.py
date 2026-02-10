@@ -534,6 +534,7 @@ def render_dashboard(copy: dict) -> str:
                 data-manager="{manager}"
                 data-invite="{invite}"
                 data-photo-url="{photo_url}"
+                data-photo-urls='{photo_urls}'
               >
                 <span class="store-name">{name}</span>
                 <span class="store-location">{location}</span>
@@ -544,6 +545,7 @@ def render_dashboard(copy: dict) -> str:
                 manager=escape(store.get("manager")),
                 invite=escape(store.get("inviteCode")),
                 photo_url=escape(store.get("photoUrl") or DEFAULT_DRESS_PHOTO_PATH),
+                photo_urls=escape(json.dumps(store.get("dress_photo_urls") or [])),
             )
         )
     tiles_html = "\n".join(store_tiles)

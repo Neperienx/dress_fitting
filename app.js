@@ -18,6 +18,67 @@ const userMenuName = document.querySelector('[data-user-menu-name]');
 const userMenuPanel = document.querySelector('[data-user-menu-panel]');
 const logoutButton = document.querySelector('[data-auth-logout]');
 
+let photoLightbox = null;
+let photoLightboxImage = null;
+
+const closePhotoLightbox = () => {
+  if (!photoLightbox) {
+    return;
+  }
+  photoLightbox.classList.add('is-hidden');
+};
+
+const ensurePhotoLightbox = () => {
+  if (photoLightbox) {
+    return;
+  }
+
+  photoLightbox = document.createElement('div');
+  photoLightbox.className = 'photo-lightbox is-hidden';
+
+  const content = document.createElement('div');
+  content.className = 'photo-lightbox-content';
+
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'photo-lightbox-close';
+  closeButton.setAttribute('aria-label', 'Close full-size image');
+  closeButton.textContent = '×';
+
+  photoLightboxImage = document.createElement('img');
+  photoLightboxImage.className = 'photo-lightbox-image';
+  photoLightboxImage.alt = 'Full-size dress photo';
+
+  closeButton.addEventListener('click', closePhotoLightbox);
+  content.addEventListener('click', (event) => {
+    event.stopPropagation();
+  });
+  photoLightbox.addEventListener('click', closePhotoLightbox);
+
+  content.appendChild(closeButton);
+  content.appendChild(photoLightboxImage);
+  photoLightbox.appendChild(content);
+  document.body.appendChild(photoLightbox);
+};
+
+const openPhotoLightbox = (photoUrl) => {
+  if (!photoUrl) {
+    return;
+  }
+  ensurePhotoLightbox();
+  if (!photoLightbox || !photoLightboxImage) {
+    return;
+  }
+  photoLightboxImage.src = photoUrl;
+  photoLightbox.classList.remove('is-hidden');
+};
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closePhotoLightbox();
+  }
+});
+
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
 const closeUserMenu = () => {
@@ -146,10 +207,12 @@ const renderMiniatures = (photoUrls, selectedPhoto) => {
     button.appendChild(image);
     button.addEventListener('click', () => {
       if (!detailPhoto) {
+        openPhotoLightbox(photoUrl);
         return;
       }
       detailPhoto.src = photoUrl;
       renderMiniatures(photoUrls, photoUrl);
+      openPhotoLightbox(photoUrl);
     });
     detailMiniatures.appendChild(button);
   });
