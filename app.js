@@ -168,6 +168,10 @@ if (storeForm && storeGrid) {
   const locationInput = storeForm.querySelector('[data-store-location]');
   const submitButton = storeForm.querySelector('[data-store-submit]');
   const messageEl = storeForm.querySelector('[data-store-message]');
+  const joinForm = document.querySelector('[data-store-join-form]');
+  const joinCodeInput = joinForm?.querySelector('[data-store-join-code]');
+  const joinSubmitButton = joinForm?.querySelector('[data-store-join-submit]');
+  const joinMessageEl = joinForm?.querySelector('[data-store-join-message]');
 
   const setStoreMessage = (message, type) => {
     if (!messageEl) {
@@ -180,6 +184,20 @@ if (storeForm && storeGrid) {
     }
     if (type === 'success') {
       messageEl.classList.add('is-success');
+    }
+  };
+
+  const setJoinMessage = (message, type) => {
+    if (!joinMessageEl) {
+      return;
+    }
+    joinMessageEl.textContent = message;
+    joinMessageEl.classList.remove('is-error', 'is-success');
+    if (type === 'error') {
+      joinMessageEl.classList.add('is-error');
+    }
+    if (type === 'success') {
+      joinMessageEl.classList.add('is-success');
     }
   };
 
@@ -287,6 +305,44 @@ if (storeForm && storeGrid) {
     }
   };
 
+  const handleJoin = async () => {
+    const member = getCurrentUser();
+    if (!member) {
+      setJoinMessage('Please log in before joining a store.', 'error');
+      return;
+    }
+    const inviteCode = joinCodeInput?.value.trim();
+    if (!inviteCode) {
+      setJoinMessage('Please enter an invite code to continue.', 'error');
+      return;
+    }
+    setJoinMessage('Linking you to the store...', '');
+    try {
+      const response = await fetch('/api/stores/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invite_code: inviteCode, member_email: member }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Unable to join the store right now.';
+        setJoinMessage(errorMessage, 'error');
+        return;
+      }
+      const store = await response.json();
+      const tile = addStoreTile(store);
+      if (tile) {
+        renderDetails(tile);
+      }
+      if (joinCodeInput) {
+        joinCodeInput.value = '';
+      }
+      setJoinMessage('You are now linked to this store.', 'success');
+    } catch (error) {
+      setJoinMessage('Unable to join the store right now.', 'error');
+    }
+  };
+
   if (submitButton) {
     submitButton.addEventListener('click', handleCreate);
   }
@@ -294,6 +350,16 @@ if (storeForm && storeGrid) {
     event.preventDefault();
     handleCreate();
   });
+
+  if (joinSubmitButton) {
+    joinSubmitButton.addEventListener('click', handleJoin);
+  }
+  if (joinForm) {
+    joinForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      handleJoin();
+    });
+  }
 
   loadStores();
 }

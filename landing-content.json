@@ -1,15 +1,38 @@
 {
   "defaultLocale": "en",
   "locales": {
-    "en": { "label": "English" },
-    "fr": { "label": "Français" },
-    "de": { "label": "Deutsch" },
-    "es": { "label": "Español" }
+    "en": {
+      "label": "English"
+    },
+    "fr": {
+      "label": "Français"
+    },
+    "de": {
+      "label": "Deutsch"
+    },
+    "es": {
+      "label": "Español"
+    }
   },
   "pages": {
-    "landing": ["hero", "logos", "features", "workflow", "steps", "testimonial", "cta", "footer"],
-    "login": ["login", "footer"],
-    "stores": ["dashboard", "footer"]
+    "landing": [
+      "hero",
+      "logos",
+      "features",
+      "workflow",
+      "steps",
+      "testimonial",
+      "cta",
+      "footer"
+    ],
+    "login": [
+      "login",
+      "footer"
+    ],
+    "stores": [
+      "dashboard",
+      "footer"
+    ]
   },
   "blocks": [
     {
@@ -245,9 +268,18 @@
           "title": "A smoother flow that feels personal — not scripted.",
           "description": "Start with quick discovery, move into curated try-ons, and finish with a clear recap. The bride feels understood, and your team stays focused.",
           "stats": [
-            { "label": "Appointment vibe", "value": "Calm & curated" },
-            { "label": "Try-ons", "value": "More relevant picks" },
-            { "label": "After the visit", "value": "Shareable recap" }
+            {
+              "label": "Appointment vibe",
+              "value": "Calm & curated"
+            },
+            {
+              "label": "Try-ons",
+              "value": "More relevant picks"
+            },
+            {
+              "label": "After the visit",
+              "value": "Shareable recap"
+            }
           ],
           "imageLabel": "Live session overview",
           "image": {
@@ -260,9 +292,18 @@
           "title": "Un déroulé plus fluide, plus personnel — sans être mécanique.",
           "description": "On commence par une découverte rapide, on enchaîne avec des essayages plus ciblés, et on termine avec un récap clair. La mariée se sent comprise, l’équipe reste focus.",
           "stats": [
-            { "label": "Ambiance du rendez-vous", "value": "Sereine & sur-mesure" },
-            { "label": "Essayages", "value": "Choix plus pertinents" },
-            { "label": "Après la visite", "value": "Récap partageable" }
+            {
+              "label": "Ambiance du rendez-vous",
+              "value": "Sereine & sur-mesure"
+            },
+            {
+              "label": "Essayages",
+              "value": "Choix plus pertinents"
+            },
+            {
+              "label": "Après la visite",
+              "value": "Récap partageable"
+            }
           ],
           "imageLabel": "Vue en direct de la session",
           "image": {
@@ -275,9 +316,18 @@
           "title": "Ein flüssiger Ablauf, der persönlich wirkt — nicht nach Skript.",
           "description": "Schnelle Entdeckung, dann kuratierte Anproben, zum Schluss ein klares Recap. Die Braut fühlt sich verstanden, das Team bleibt fokussiert.",
           "stats": [
-            { "label": "Termingefühl", "value": "Ruhig & kuratiert" },
-            { "label": "Anproben", "value": "Passendere Auswahl" },
-            { "label": "Nach dem Termin", "value": "Teilbares Recap" }
+            {
+              "label": "Termingefühl",
+              "value": "Ruhig & kuratiert"
+            },
+            {
+              "label": "Anproben",
+              "value": "Passendere Auswahl"
+            },
+            {
+              "label": "Nach dem Termin",
+              "value": "Teilbares Recap"
+            }
           ],
           "imageLabel": "Live-Übersicht der Session",
           "image": {
@@ -290,9 +340,18 @@
           "title": "Un flujo más fluido y personal — no robótico.",
           "description": "Empieza con un descubrimiento rápido, pasa a pruebas curadas y termina con un resumen claro. La novia se siente comprendida y el equipo se mantiene enfocado.",
           "stats": [
-            { "label": "Sensación de la cita", "value": "Tranquila y curada" },
-            { "label": "Pruebas", "value": "Selecciones más relevantes" },
-            { "label": "Después de la visita", "value": "Resumen compartible" }
+            {
+              "label": "Sensación de la cita",
+              "value": "Tranquila y curada"
+            },
+            {
+              "label": "Pruebas",
+              "value": "Selecciones más relevantes"
+            },
+            {
+              "label": "Después de la visita",
+              "value": "Resumen compartible"
+            }
           ],
           "imageLabel": "Vista en vivo de la sesión",
           "image": {
@@ -351,26 +410,7 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": [
-            {
-              "name": "Marigold Bridal",
-              "location": "Nashville, TN",
-              "manager": "Lead stylist: Avery Carter",
-              "inviteCode": "MG-1023"
-            },
-            {
-              "name": "Studio Verity",
-              "location": "Seattle, WA",
-              "manager": "Lead stylist: Riley Chen",
-              "inviteCode": "SV-8841"
-            },
-            {
-              "name": "Rue Blanche",
-              "location": "Brooklyn, NY",
-              "manager": "Lead stylist: Alexis Dubois",
-              "inviteCode": "RB-5510"
-            }
-          ]
+          "stores": []
         },
         "fr": {
           "eyebrow": "Account workspace",
@@ -394,26 +434,7 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": [
-            {
-              "name": "Marigold Bridal",
-              "location": "Nashville, TN",
-              "manager": "Lead stylist: Avery Carter",
-              "inviteCode": "MG-1023"
-            },
-            {
-              "name": "Studio Verity",
-              "location": "Seattle, WA",
-              "manager": "Lead stylist: Riley Chen",
-              "inviteCode": "SV-8841"
-            },
-            {
-              "name": "Rue Blanche",
-              "location": "Brooklyn, NY",
-              "manager": "Lead stylist: Alexis Dubois",
-              "inviteCode": "RB-5510"
-            }
-          ]
+          "stores": []
         },
         "de": {
           "eyebrow": "Account workspace",
@@ -437,26 +458,7 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": [
-            {
-              "name": "Marigold Bridal",
-              "location": "Nashville, TN",
-              "manager": "Lead stylist: Avery Carter",
-              "inviteCode": "MG-1023"
-            },
-            {
-              "name": "Studio Verity",
-              "location": "Seattle, WA",
-              "manager": "Lead stylist: Riley Chen",
-              "inviteCode": "SV-8841"
-            },
-            {
-              "name": "Rue Blanche",
-              "location": "Brooklyn, NY",
-              "manager": "Lead stylist: Alexis Dubois",
-              "inviteCode": "RB-5510"
-            }
-          ]
+          "stores": []
         },
         "es": {
           "eyebrow": "Account workspace",
@@ -480,26 +482,7 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": [
-            {
-              "name": "Marigold Bridal",
-              "location": "Nashville, TN",
-              "manager": "Lead stylist: Avery Carter",
-              "inviteCode": "MG-1023"
-            },
-            {
-              "name": "Studio Verity",
-              "location": "Seattle, WA",
-              "manager": "Lead stylist: Riley Chen",
-              "inviteCode": "SV-8841"
-            },
-            {
-              "name": "Rue Blanche",
-              "location": "Brooklyn, NY",
-              "manager": "Lead stylist: Alexis Dubois",
-              "inviteCode": "RB-5510"
-            }
-          ]
+          "stores": []
         }
       }
     },
@@ -646,22 +629,42 @@
         "en": {
           "title": "Bridal Studio Sessions",
           "description": "A guided appointment experience for bridal boutiques — calm, curated, and built around your inventory.",
-          "links": ["Privacy", "Terms", "Support", "Contact"]
+          "links": [
+            "Privacy",
+            "Terms",
+            "Support",
+            "Contact"
+          ]
         },
         "fr": {
           "title": "Bridal Studio Sessions",
           "description": "Une expérience de rendez-vous guidée pour boutiques mariée — sereine, sur-mesure, basée sur votre inventaire.",
-          "links": ["Confidentialité", "Conditions", "Support", "Contact"]
+          "links": [
+            "Confidentialité",
+            "Conditions",
+            "Support",
+            "Contact"
+          ]
         },
         "de": {
           "title": "Bridal Studio Sessions",
           "description": "Ein geführtes Terminerlebnis für Brautboutiquen — ruhig, kuratiert und auf Ihrem Inventar aufgebaut.",
-          "links": ["Datenschutz", "AGB", "Support", "Kontakt"]
+          "links": [
+            "Datenschutz",
+            "AGB",
+            "Support",
+            "Kontakt"
+          ]
         },
         "es": {
           "title": "Bridal Studio Sessions",
           "description": "Una experiencia de cita guiada para boutiques nupciales — tranquila, curada y basada en tu inventario.",
-          "links": ["Privacidad", "Términos", "Soporte", "Contacto"]
+          "links": [
+            "Privacidad",
+            "Términos",
+            "Soporte",
+            "Contacto"
+          ]
         }
       }
     }
