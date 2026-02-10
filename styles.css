@@ -105,6 +105,10 @@ a {
   border-color: var(--primary);
 }
 
+.is-hidden {
+  display: none !important;
+}
+
 .section {
   padding: 4rem 0;
 }
@@ -190,6 +194,44 @@ h1 {
 .login-button {
   padding: 0.65rem 1.4rem;
   font-size: 0.95rem;
+}
+
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  padding: 0.65rem 1.2rem;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.user-menu-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  min-width: 140px;
+  padding: 0.4rem;
+  z-index: 20;
+}
+
+.user-menu-logout {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.user-menu-logout:hover {
+  background: var(--accent);
 }
 
 .card-grid {
