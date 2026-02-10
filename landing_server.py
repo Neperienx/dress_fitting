@@ -5,9 +5,11 @@ import html
 import json
 import secrets
 import sqlite3
+from cgi import FieldStorage
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
+import re
 from socketserver import TCPServer
 from string import Template
 from urllib.parse import parse_qs, urlparse
@@ -16,6 +18,9 @@ BASE_DIR = Path(__file__).resolve().parent
 CONTENT_PATH = BASE_DIR / "landing-content.json"
 TEMPLATE_PATH = BASE_DIR / "index.html"
 DB_PATH = BASE_DIR / "stores.db"
+DEFAULT_DRESS_PHOTO_PATH = "images/default-dress.svg"
+STORE_DRESS_PHOTO_DIR = BASE_DIR / "images" / "store_dresses"
+ALLOWED_DRESS_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
 def init_db() -> None:
@@ -27,11 +32,16 @@ def init_db() -> None:
               name TEXT NOT NULL,
               location TEXT NOT NULL,
               owner_email TEXT NOT NULL,
+              dress_photo_path TEXT,
               invite_code TEXT NOT NULL,
               created_at TEXT NOT NULL
             )
             """
         )
+        columns = conn.execute("PRAGMA table_info(stores)").fetchall()
+        column_names = {column[1] for column in columns}
+        if "dress_photo_path" not in column_names:
+            conn.execute("ALTER TABLE stores ADD COLUMN dress_photo_path TEXT")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS store_members (
@@ -50,13 +60,25 @@ def generate_invite_code() -> str:
     return secrets.token_hex(3).upper()
 
 
+def normalize_photo_path(photo_path: str | None) -> str:
+    if photo_path:
+        return photo_path
+    return DEFAULT_DRESS_PHOTO_PATH
+
+
+def normalize_store_payload(store: dict) -> dict:
+    payload = dict(store)
+    payload["dress_photo_url"] = normalize_photo_path(payload.get("dress_photo_path"))
+    return payload
+
+
 def fetch_stores(user_email: str) -> list[dict]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
             """
             SELECT DISTINCT stores.id, stores.name, stores.location, stores.owner_email,
-                            stores.invite_code, stores.created_at
+                            stores.dress_photo_path, stores.invite_code, stores.created_at
             FROM stores
             LEFT JOIN store_members ON stores.id = store_members.store_id
             WHERE stores.owner_email = ? OR store_members.member_email = ?
@@ -64,7 +86,7 @@ def fetch_stores(user_email: str) -> list[dict]:
             """,
             (user_email, user_email),
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [normalize_store_payload(dict(row)) for row in rows]
 
 
 def create_store(name: str, location: str, owner_email: str) -> dict:
@@ -84,6 +106,8 @@ def create_store(name: str, location: str, owner_email: str) -> dict:
         "name": name,
         "location": location,
         "owner_email": owner_email,
+        "dress_photo_path": None,
+        "dress_photo_url": DEFAULT_DRESS_PHOTO_PATH,
         "invite_code": invite_code,
         "created_at": created_at,
     }
@@ -98,7 +122,7 @@ def join_store(invite_code: str, member_email: str) -> dict | None:
         conn.row_factory = sqlite3.Row
         store = conn.execute(
             """
-            SELECT id, name, location, owner_email, invite_code, created_at
+            SELECT id, name, location, owner_email, dress_photo_path, invite_code, created_at
             FROM stores
             WHERE invite_code = ?
             """,
@@ -114,7 +138,39 @@ def join_store(invite_code: str, member_email: str) -> dict | None:
             """,
             (store["id"], member_email, joined_at),
         )
-    return dict(store)
+    return normalize_store_payload(dict(store))
+
+
+def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str | None:
+    extension = Path(filename).suffix.lower()
+    if extension not in ALLOWED_DRESS_EXTENSIONS:
+        return None
+    STORE_DRESS_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+    relative_path = Path("images") / "store_dresses" / f"store-{store_id}{extension}"
+    full_path = BASE_DIR / relative_path
+    full_path.write_bytes(content)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE stores SET dress_photo_path = ? WHERE id = ?",
+            (str(relative_path), store_id),
+        )
+    return str(relative_path)
+
+
+def fetch_store_by_id(store_id: int) -> dict | None:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        store = conn.execute(
+            """
+            SELECT id, name, location, owner_email, dress_photo_path, invite_code, created_at
+            FROM stores
+            WHERE id = ?
+            """,
+            (store_id,),
+        ).fetchone()
+    if not store:
+        return None
+    return normalize_store_payload(dict(store))
 
 
 def load_content() -> dict:
@@ -426,6 +482,7 @@ def render_dashboard(copy: dict) -> str:
                 data-location="{location}"
                 data-manager="{manager}"
                 data-invite="{invite}"
+                data-photo-url="{photo_url}"
               >
                 <span class="store-name">{name}</span>
                 <span class="store-location">{location}</span>
@@ -435,6 +492,7 @@ def render_dashboard(copy: dict) -> str:
                 location=escape(store.get("location")),
                 manager=escape(store.get("manager")),
                 invite=escape(store.get("inviteCode")),
+                photo_url=escape(store.get("photoUrl") or DEFAULT_DRESS_PHOTO_PATH),
             )
         )
     tiles_html = "\n".join(store_tiles)
@@ -458,10 +516,40 @@ def render_dashboard(copy: dict) -> str:
           </div>
           <div class="dashboard-panel detail-panel">
             <h3>{escape(copy.get("detailTitle"))}</h3>
-            <div class="store-detail" data-empty-text="{escape(copy.get("detailEmpty"))}">
+            <div
+              class="store-detail"
+              data-empty-text="{escape(copy.get("detailEmpty"))}"
+              data-default-photo="{escape(DEFAULT_DRESS_PHOTO_PATH)}"
+            >
+              <div class="store-detail-photo-wrap">
+                <img
+                  class="store-detail-photo"
+                  src="{escape(DEFAULT_DRESS_PHOTO_PATH)}"
+                  alt="Store dress"
+                />
+              </div>
               <p class="store-detail-name">{escape(copy.get("detailEmpty"))}</p>
               <p class="store-detail-location"></p>
               <ul class="store-detail-meta"></ul>
+              <form class="store-form" data-dress-photo-form>
+                <label>
+                  {escape(copy.get("photoUploadLabel") or "Dress photo")}
+                  <input
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp"
+                    data-dress-photo-input
+                  />
+                </label>
+                <button class="button secondary" type="submit" data-dress-photo-submit>
+                  {escape(copy.get("photoUploadButton") or "Upload photo")}
+                </button>
+                <p
+                  class="auth-message form-message"
+                  data-dress-photo-message
+                  role="status"
+                  aria-live="polite"
+                ></p>
+              </form>
             </div>
           </div>
         </div>
@@ -601,6 +689,73 @@ def render_page(locale: str, page_id: str) -> str:
 class LandingHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        dress_photo_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo", parsed.path)
+        if dress_photo_match:
+            store_id = int(dress_photo_match.group(1))
+            store = fetch_store_by_id(store_id)
+            if not store:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Store not found."}).encode("utf-8"))
+                return
+            content_type = self.headers.get("Content-Type") or ""
+            if "multipart/form-data" not in content_type:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "multipart/form-data is required."}).encode("utf-8")
+                )
+                return
+
+            form = FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": content_type,
+                    "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
+                },
+            )
+            upload = form["dress_photo"] if "dress_photo" in form else None
+            if upload is None or not getattr(upload, "filename", ""):
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "dress_photo is required."}).encode("utf-8")
+                )
+                return
+            content = upload.file.read() if upload.file else b""
+            if not content:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Uploaded file is empty."}).encode("utf-8")
+                )
+                return
+            photo_path = save_store_dress_photo(store_id, upload.filename, content)
+            if not photo_path:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {
+                            "error": "Only .png, .jpg, .jpeg, and .webp files are supported.",
+                        }
+                    ).encode("utf-8")
+                )
+                return
+            updated_store = fetch_store_by_id(store_id)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(updated_store).encode("utf-8"))
+            return
+
         if parsed.path == "/api/stores":
             try:
                 length = int(self.headers.get("Content-Length", "0"))

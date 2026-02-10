@@ -2,6 +2,11 @@ const detailPanel = document.querySelector('.store-detail');
 const detailName = document.querySelector('.store-detail-name');
 const detailLocation = document.querySelector('.store-detail-location');
 const detailMeta = document.querySelector('.store-detail-meta');
+const detailPhoto = document.querySelector('.store-detail-photo');
+const dressPhotoForm = document.querySelector('[data-dress-photo-form]');
+const dressPhotoInput = dressPhotoForm?.querySelector('[data-dress-photo-input]');
+const dressPhotoSubmit = dressPhotoForm?.querySelector('[data-dress-photo-submit]');
+const dressPhotoMessage = dressPhotoForm?.querySelector('[data-dress-photo-message]');
 const storeGrid = document.querySelector('.store-grid');
 const sessionKey = 'bridalStudioCurrentUser';
 const usersKey = 'bridalStudioUsers';
@@ -37,6 +42,34 @@ const updateHeaderAuth = () => {
   if (!isLoggedIn) {
     closeUserMenu();
   }
+};
+
+const setDressPhotoMessage = (message, type) => {
+  if (!dressPhotoMessage) {
+    return;
+  }
+  dressPhotoMessage.textContent = message;
+  dressPhotoMessage.classList.remove('is-error', 'is-success');
+  if (type === 'error') {
+    dressPhotoMessage.classList.add('is-error');
+  }
+  if (type === 'success') {
+    dressPhotoMessage.classList.add('is-success');
+  }
+};
+
+const setDressPhotoFormState = (tile) => {
+  if (!dressPhotoForm || !dressPhotoSubmit) {
+    return;
+  }
+  const storeId = tile?.dataset.storeId;
+  dressPhotoForm.dataset.storeId = storeId || '';
+  dressPhotoSubmit.disabled = !storeId;
+  if (!storeId) {
+    setDressPhotoMessage('Upload is available for stores linked to your account.', '');
+    return;
+  }
+  setDressPhotoMessage('', '');
 };
 
 if (userMenuTrigger) {
@@ -76,10 +109,16 @@ const renderDetails = (tile) => {
     return;
   }
 
+  const defaultPhoto = detailPanel.dataset.defaultPhoto || 'images/default-dress.svg';
+
   if (!tile) {
     detailName.textContent = detailPanel.dataset.emptyText || 'Select a store to see details.';
     detailLocation.textContent = '';
     detailMeta.innerHTML = '';
+    if (detailPhoto) {
+      detailPhoto.src = defaultPhoto;
+    }
+    setDressPhotoFormState(null);
     return;
   }
 
@@ -87,10 +126,14 @@ const renderDetails = (tile) => {
   const location = tile.dataset.location;
   const manager = tile.dataset.manager;
   const invite = tile.dataset.invite;
+  const photoUrl = tile.dataset.photoUrl || defaultPhoto;
 
   detailName.textContent = name;
   detailLocation.textContent = location;
   detailMeta.innerHTML = '';
+  if (detailPhoto) {
+    detailPhoto.src = photoUrl;
+  }
 
   const managerItem = document.createElement('li');
   managerItem.textContent = manager;
@@ -99,6 +142,8 @@ const renderDetails = (tile) => {
   const inviteItem = document.createElement('li');
   inviteItem.textContent = `Invite code: ${invite}`;
   detailMeta.appendChild(inviteItem);
+
+  setDressPhotoFormState(tile);
 };
 
 if (storeGrid) {
@@ -113,6 +158,54 @@ if (storeGrid) {
 
 const firstStore = document.querySelector('.store-tile:not(.add-tile)');
 renderDetails(firstStore);
+
+if (dressPhotoForm) {
+  dressPhotoForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const storeId = dressPhotoForm.dataset.storeId;
+    if (!storeId) {
+      setDressPhotoMessage('Select one of your stores first.', 'error');
+      return;
+    }
+    const file = dressPhotoInput?.files?.[0];
+    if (!file) {
+      setDressPhotoMessage('Please choose a photo before uploading.', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('dress_photo', file);
+    setDressPhotoMessage('Uploading photo...', '');
+
+    try {
+      const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setDressPhotoMessage(errorData.error || 'Unable to upload photo right now.', 'error');
+        return;
+      }
+
+      const store = await response.json();
+      const photoUrl = store.dress_photo_url;
+      const tile = storeGrid?.querySelector(`[data-store-id="${storeId}"]`);
+      if (tile && photoUrl) {
+        tile.dataset.photoUrl = photoUrl;
+      }
+      if (tile && detailName?.textContent === tile.dataset.name) {
+        renderDetails(tile);
+      }
+      if (dressPhotoInput) {
+        dressPhotoInput.value = '';
+      }
+      setDressPhotoMessage('Dress photo updated for this store.', 'success');
+    } catch (error) {
+      setDressPhotoMessage('Unable to upload photo right now.', 'error');
+    }
+  });
+}
 
 const authCard = document.querySelector('[data-auth-card]');
 if (authCard) {
@@ -276,6 +369,7 @@ if (storeForm && storeGrid) {
     tile.dataset.location = store.location;
     tile.dataset.manager = `Owner: ${store.owner_email}`;
     tile.dataset.invite = store.invite_code;
+    tile.dataset.photoUrl = store.dress_photo_url || detailPanel?.dataset.defaultPhoto || 'images/default-dress.svg';
     if (store.id) {
       tile.dataset.storeId = store.id;
     }

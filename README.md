@@ -29,6 +29,20 @@ To replace the photos:
 2. Update the relevant `image.src` values in `landing-content.json` to the new relative paths.
 3. Restart `python landing_server.py` and refresh the page.
 
+
+### Store-specific dress photos (upload + default)
+Stores can now have their own dress image in the **Stores** page.
+
+How it works:
+1. Open `http://localhost:8000/stores` and select a store tile.
+2. In the store detail card, use **Dress photo** to upload a `.png`, `.jpg`, `.jpeg`, or `.webp` file.
+3. The server saves that file under `images/store_dresses/` using the store id in the filename (for example: `images/store_dresses/store-3.jpg`).
+4. The photo is linked only to that store.
+
+Default photo behavior:
+- If a store has no uploaded photo yet, the app shows `images/default-dress.svg` automatically.
+- You can customize the default by replacing that file (keep the same path/name) or by updating `DEFAULT_DRESS_PHOTO_PATH` in `landing_server.py`.
+
 ## Setup details
 1. Copy env vars:
    ```bash
