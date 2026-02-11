@@ -580,6 +580,30 @@ h1 {
   font-size: 0.95rem;
 }
 
+.store-detail-meta {
+  color: var(--muted);
+}
+
+.button.is-disabled {
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.store-details-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.dress-photo-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.dress-grid-tile {
+  padding: 0.3rem;
+}
+
 .store-form {
   display: grid;
   gap: 1rem;

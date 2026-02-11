@@ -535,6 +535,7 @@ def render_dashboard(copy: dict) -> str:
                 data-invite="{invite}"
                 data-photo-url="{photo_url}"
                 data-photo-urls='{photo_urls}'
+                data-store-id="{store_id}"
               >
                 <span class="store-name">{name}</span>
                 <span class="store-location">{location}</span>
@@ -546,6 +547,7 @@ def render_dashboard(copy: dict) -> str:
                 invite=escape(store.get("inviteCode")),
                 photo_url=escape(store.get("photoUrl") or DEFAULT_DRESS_PHOTO_PATH),
                 photo_urls=escape(json.dumps(store.get("dress_photo_urls") or [])),
+                store_id=escape(store.get("id")),
             )
         )
     tiles_html = "\n".join(store_tiles)
@@ -572,38 +574,15 @@ def render_dashboard(copy: dict) -> str:
             <div
               class="store-detail"
               data-empty-text="{escape(copy.get("detailEmpty"))}"
-              data-default-photo="{escape(DEFAULT_DRESS_PHOTO_PATH)}"
             >
-              <div class="store-detail-photo-wrap">
-                <img
-                  class="store-detail-photo"
-                  src="{escape(DEFAULT_DRESS_PHOTO_PATH)}"
-                  alt="Store dress"
-                />
-              </div>
-              <p class="store-detail-name">{escape(copy.get("detailEmpty"))}</p>
-              <p class="store-detail-location"></p>
-              <ul class="store-detail-meta"></ul>
-              <div class="store-detail-miniatures" data-dress-miniatures></div>
-              <form class="store-form" data-dress-photo-form>
-                <label>
-                  {escape(copy.get("photoUploadLabel") or "Dress photo")}
-                  <input
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.webp"
-                    data-dress-photo-input
-                  />
-                </label>
-                <button class="button secondary" type="submit" data-dress-photo-submit>
-                  {escape(copy.get("photoUploadButton") or "Upload photo")}
-                </button>
-                <p
-                  class="auth-message form-message"
-                  data-dress-photo-message
-                  role="status"
-                  aria-live="polite"
-                ></p>
-              </form>
+              <p class="store-detail-name" data-store-overview-name>
+                {escape(copy.get("detailEmpty"))}
+              </p>
+              <p class="store-detail-location" data-store-overview-address></p>
+              <p class="store-detail-meta" data-store-overview-photo-count></p>
+              <a class="button secondary is-disabled" href="#" data-store-details-link>
+                {escape(copy.get("detailsButton") or "Go to store details")}
+              </a>
             </div>
           </div>
         </div>
@@ -670,6 +649,56 @@ def render_dashboard(copy: dict) -> str:
     """
 
 
+def render_store_details(copy: dict) -> str:
+    return f"""
+      <div class="container store-details-page">
+        <div class="dashboard-header">
+          <div>
+            <p class="eyebrow">{escape(copy.get("eyebrow") or "Store management")}</p>
+            <h2>{escape(copy.get("title") or "Store details")}</h2>
+            <p class="lead">{escape(copy.get("subtitle") or "Manage your store and dress photos in one place.")}</p>
+          </div>
+        </div>
+
+        <div class="dashboard-panel store-detail">
+          <p class="store-detail-name" data-store-details-name>
+            {escape(copy.get("empty") or "Select a store from the overview first.")}
+          </p>
+          <p class="store-detail-location" data-store-details-address></p>
+          <p class="store-detail-meta" data-store-details-photo-count></p>
+        </div>
+
+        <div class="dashboard-panel">
+          <h3>{escape(copy.get("photoTitle") or "Upload bridal dress photos")}</h3>
+          <form class="store-form" data-dress-photo-form>
+            <label>
+              {escape(copy.get("photoUploadLabel") or "Dress photo")}
+              <input
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp"
+                data-dress-photo-input
+              />
+            </label>
+            <button class="button secondary" type="submit" data-dress-photo-submit>
+              {escape(copy.get("photoUploadButton") or "Upload photo")}
+            </button>
+            <p
+              class="auth-message form-message"
+              data-dress-photo-message
+              role="status"
+              aria-live="polite"
+            ></p>
+          </form>
+        </div>
+
+        <div class="dashboard-panel">
+          <h3>{escape(copy.get("galleryTitle") or "Dress photo gallery")}</h3>
+          <div class="dress-photo-grid" data-dress-miniatures></div>
+        </div>
+      </div>
+    """
+
+
 def render_footer(copy: dict) -> str:
     links = "".join(
         f'<a href="#">{escape(link)}</a>' for link in copy.get("links", [])
@@ -693,6 +722,7 @@ RENDERERS = {
     "cta": render_cta,
     "login": render_login,
     "dashboard": render_dashboard,
+    "storeDetails": render_store_details,
     "footer": render_footer,
 }
 
@@ -728,6 +758,7 @@ def render_page(locale: str, page_id: str) -> str:
         "landing": "Bridal Studio Sessions — Dress Shop Platform",
         "login": "Log in — Bridal Studio Sessions",
         "stores": "Stores — Bridal Studio Sessions",
+        "store-details": "Store Details — Bridal Studio Sessions",
     }
     page_title = page_titles.get(page_id, page_titles["landing"])
     template_text = TEMPLATE_PATH.read_text(encoding="utf-8")
@@ -939,6 +970,15 @@ class LandingHandler(SimpleHTTPRequestHandler):
             query = parse_qs(parsed.query)
             locale = query.get("lang", [""])[0]
             page = render_page(locale, "stores")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(page.encode("utf-8"))
+            return
+        if parsed.path in {"/stores/details", "/stores/details/"}:
+            query = parse_qs(parsed.query)
+            locale = query.get("lang", [""])[0]
+            page = render_page(locale, "store-details")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
