@@ -32,6 +32,10 @@
     "stores": [
       "dashboard",
       "footer"
+    ],
+    "store-details": [
+      "store-details",
+      "footer"
     ]
   },
   "blocks": [
@@ -410,7 +414,8 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": []
+          "stores": [],
+          "detailsButton": "Go to store details"
         },
         "fr": {
           "eyebrow": "Account workspace",
@@ -434,7 +439,8 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": []
+          "stores": [],
+          "detailsButton": "Go to store details"
         },
         "de": {
           "eyebrow": "Account workspace",
@@ -458,7 +464,8 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": []
+          "stores": [],
+          "detailsButton": "Go to store details"
         },
         "es": {
           "eyebrow": "Account workspace",
@@ -482,7 +489,8 @@
           "joinLabel": "Invite code",
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
-          "stores": []
+          "stores": [],
+          "detailsButton": "Go to store details"
         }
       }
     },
@@ -665,6 +673,23 @@
             "Soporte",
             "Contacto"
           ]
+        }
+      }
+    },
+    {
+      "id": "store-details",
+      "type": "storeDetails",
+      "theme": "alt",
+      "content": {
+        "en": {
+          "eyebrow": "Store management",
+          "title": "Store details",
+          "subtitle": "Manage your bridal store details and dress images from this page.",
+          "empty": "Store not found. Return to Stores and choose a store again.",
+          "photoTitle": "Upload bridal dress photos",
+          "photoUploadLabel": "Dress photo",
+          "photoUploadButton": "Upload photo",
+          "galleryTitle": "Dress photo gallery"
         }
       }
     }
