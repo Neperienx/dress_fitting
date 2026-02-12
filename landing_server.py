@@ -206,6 +206,41 @@ def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str 
     return str(relative_path)
 
 
+def remove_store_dress_photo(store_id: int, photo_path: str) -> bool:
+    normalized_photo_path = (photo_path or "").strip()
+    if not normalized_photo_path:
+        return False
+    with sqlite3.connect(DB_PATH) as conn:
+        deleted = conn.execute(
+            """
+            DELETE FROM store_dress_photos
+            WHERE store_id = ? AND photo_path = ?
+            """,
+            (store_id, normalized_photo_path),
+        )
+        if deleted.rowcount < 1:
+            return False
+        latest_photo_row = conn.execute(
+            """
+            SELECT photo_path
+            FROM store_dress_photos
+            WHERE store_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (store_id,),
+        ).fetchone()
+        conn.execute(
+            "UPDATE stores SET dress_photo_path = ? WHERE id = ?",
+            ((latest_photo_row[0] if latest_photo_row else None), store_id),
+        )
+
+    full_photo_path = BASE_DIR / normalized_photo_path
+    if full_photo_path.exists() and full_photo_path.is_file():
+        full_photo_path.unlink()
+    return True
+
+
 def fetch_store_by_id(store_id: int) -> dict | None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -666,6 +701,14 @@ def render_store_details(copy: dict) -> str:
           </p>
           <p class="store-detail-location" data-store-details-address></p>
           <p class="store-detail-meta" data-store-details-photo-count></p>
+          <p class="store-detail-meta" data-store-details-owner></p>
+          <p class="store-detail-meta" data-store-details-invite></p>
+          <p class="store-detail-meta" data-store-details-created></p>
+        </div>
+
+        <div class="dashboard-panel dress-preview-panel">
+          <h3>{escape(copy.get("previewTitle") or "Dress preview")}</h3>
+          <img class="dress-preview-image is-hidden" data-dress-preview-image alt="Detailed dress preview" />
         </div>
 
         <div class="dashboard-panel">
@@ -804,6 +847,21 @@ class LandingHandler(SimpleHTTPRequestHandler):
                 },
             )
             upload = form["dress_photo"] if "dress_photo" in form else None
+            owner_email = (
+                form["owner_email"].value.strip().lower()
+                if "owner_email" in form and getattr(form["owner_email"], "value", "")
+                else ""
+            )
+            if owner_email != (store.get("owner_email") or "").strip().lower():
+                self.send_response(403)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {"error": "Only the store owner can upload dress photos."}
+                    ).encode("utf-8")
+                )
+                return
             if upload is None or not getattr(upload, "filename", ""):
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
@@ -929,6 +987,78 @@ class LandingHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"error": "Not found."}).encode("utf-8"))
 
+    def do_DELETE(self) -> None:
+        parsed = urlparse(self.path)
+        dress_photo_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo", parsed.path)
+        if dress_photo_match:
+            store_id = int(dress_photo_match.group(1))
+            store = fetch_store_by_id(store_id)
+            if not store:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Store not found."}).encode("utf-8"))
+                return
+
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = 0
+            payload = self.rfile.read(length).decode("utf-8") if length else ""
+            try:
+                data = json.loads(payload) if payload else {}
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Invalid JSON payload."}).encode("utf-8")
+                )
+                return
+
+            owner_email = (data.get("owner_email") or "").strip().lower()
+            photo_path = (data.get("photo_path") or "").strip()
+            if owner_email != (store.get("owner_email") or "").strip().lower():
+                self.send_response(403)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {"error": "Only the store owner can remove dress photos."}
+                    ).encode("utf-8")
+                )
+                return
+            if not photo_path:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "photo_path is required."}).encode("utf-8")
+                )
+                return
+
+            removed = remove_store_dress_photo(store_id, photo_path)
+            if not removed:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Photo not found."}).encode("utf-8")
+                )
+                return
+
+            updated_store = fetch_store_by_id(store_id)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(updated_store).encode("utf-8"))
+            return
+
+        self.send_response(404)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps({"error": "Not found."}).encode("utf-8"))
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/stores":
@@ -976,6 +1106,15 @@ class LandingHandler(SimpleHTTPRequestHandler):
             self.wfile.write(page.encode("utf-8"))
             return
         if parsed.path in {"/stores/details", "/stores/details/"}:
+            query = parse_qs(parsed.query)
+            locale = query.get("lang", [""])[0]
+            page = render_page(locale, "store-details")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(page.encode("utf-8"))
+            return
+        if parsed.path in {"/details", "/details/"}:
             query = parse_qs(parsed.query)
             locale = query.get("lang", [""])[0]
             page = render_page(locale, "store-details")

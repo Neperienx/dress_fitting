@@ -602,6 +602,31 @@ h1 {
 
 .dress-grid-tile {
   padding: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.dress-remove-button {
+  justify-self: end;
+  font-size: 0.85rem;
+}
+
+.dress-preview-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dress-preview-image {
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  cursor: zoom-in;
 }
 
 .store-form {

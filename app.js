@@ -7,6 +7,10 @@ const storeDetailsLink = document.querySelector('[data-store-details-link]');
 const detailsName = document.querySelector('[data-store-details-name]');
 const detailsAddress = document.querySelector('[data-store-details-address]');
 const detailsPhotoCount = document.querySelector('[data-store-details-photo-count]');
+const detailsOwner = document.querySelector('[data-store-details-owner]');
+const detailsInviteCode = document.querySelector('[data-store-details-invite]');
+const detailsCreatedAt = document.querySelector('[data-store-details-created]');
+const detailsPreviewImage = document.querySelector('[data-dress-preview-image]');
 const detailMiniatures = document.querySelector('[data-dress-miniatures]');
 const dressPhotoForm = document.querySelector('[data-dress-photo-form]');
 const dressPhotoInput = dressPhotoForm?.querySelector('[data-dress-photo-input]');
@@ -23,6 +27,8 @@ const logoutButton = document.querySelector('[data-auth-logout]');
 
 let photoLightbox = null;
 let photoLightboxImage = null;
+let selectedPreviewPhotoUrl = '';
+let activeStoreCanManagePhotos = false;
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
@@ -200,7 +206,7 @@ const setOverviewStore = (tile) => {
   if (storeId) {
     storeDetailsLink.classList.remove('is-disabled');
     storeDetailsLink.setAttribute('aria-disabled', 'false');
-    storeDetailsLink.setAttribute('href', `/stores/details?store=${encodeURIComponent(storeId)}`);
+    storeDetailsLink.setAttribute('href', `/details?store=${encodeURIComponent(storeId)}`);
   }
 };
 
@@ -219,11 +225,52 @@ if (initialStore && overviewName) {
   setOverviewStore(initialStore);
 }
 
-const renderDetailsGallery = (photoUrls) => {
+const setPreviewPhoto = (photoUrl) => {
+  selectedPreviewPhotoUrl = photoUrl || '';
+  if (!detailsPreviewImage) {
+    return;
+  }
+  if (!photoUrl) {
+    detailsPreviewImage.classList.add('is-hidden');
+    detailsPreviewImage.removeAttribute('src');
+    return;
+  }
+  detailsPreviewImage.src = photoUrl;
+  detailsPreviewImage.classList.remove('is-hidden');
+};
+
+const removeDressPhoto = async (storeId, photoUrl) => {
+  const ownerEmail = getSessionUser();
+  if (!storeId || !photoUrl || !ownerEmail) {
+    return;
+  }
+
+  setDressPhotoMessage('Removing photo...', '');
+  try {
+    const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo_path: photoUrl, owner_email: ownerEmail }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      setDressPhotoMessage(errorData.error || 'Unable to remove this photo right now.', 'error');
+      return;
+    }
+    const store = await response.json();
+    updateDetailsSummary(store);
+    setDressPhotoMessage('Photo removed.', 'success');
+  } catch (error) {
+    setDressPhotoMessage('Unable to remove this photo right now.', 'error');
+  }
+};
+
+const renderDetailsGallery = (photoUrls, storeId) => {
   if (!detailMiniatures) {
     return;
   }
   detailMiniatures.innerHTML = '';
+  setPreviewPhoto(photoUrls[0] || '');
 
   if (!photoUrls.length) {
     const empty = document.createElement('p');
@@ -234,19 +281,42 @@ const renderDetailsGallery = (photoUrls) => {
   }
 
   photoUrls.forEach((photoUrl, index) => {
-    const tile = document.createElement('button');
-    tile.type = 'button';
-    tile.className = 'store-miniature-button dress-grid-tile';
+    const tile = document.createElement('div');
+    tile.className = 'dress-grid-tile';
+
+    const previewButton = document.createElement('button');
+    previewButton.type = 'button';
+    previewButton.className = 'store-miniature-button';
 
     const image = document.createElement('img');
     image.className = 'store-miniature-image';
     image.src = photoUrl;
     image.alt = `Dress ${index + 1}`;
 
-    tile.appendChild(image);
-    tile.addEventListener('click', () => {
-      openPhotoLightbox(photoUrl);
+    previewButton.appendChild(image);
+    previewButton.addEventListener('click', () => {
+      setPreviewPhoto(photoUrl);
+      const allButtons = detailMiniatures.querySelectorAll('.store-miniature-button');
+      allButtons.forEach((button) => button.classList.remove('is-selected'));
+      previewButton.classList.add('is-selected');
     });
+
+    if (photoUrl === selectedPreviewPhotoUrl || (!selectedPreviewPhotoUrl && index === 0)) {
+      previewButton.classList.add('is-selected');
+    }
+    tile.appendChild(previewButton);
+
+    if (activeStoreCanManagePhotos) {
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'text-link dress-remove-button';
+      removeButton.textContent = 'Remove';
+      removeButton.addEventListener('click', () => {
+        removeDressPhoto(storeId, photoUrl);
+      });
+      tile.appendChild(removeButton);
+    }
+
     detailMiniatures.appendChild(tile);
   });
 };
@@ -259,24 +329,51 @@ const updateDetailsSummary = (store) => {
     detailsName.textContent = 'Store not found. Return to Stores and choose a store again.';
     detailsAddress.textContent = '';
     detailsPhotoCount.textContent = '';
+    if (detailsOwner) {
+      detailsOwner.textContent = '';
+    }
+    if (detailsInviteCode) {
+      detailsInviteCode.textContent = '';
+    }
+    if (detailsCreatedAt) {
+      detailsCreatedAt.textContent = '';
+    }
     if (dressPhotoSubmit) {
       dressPhotoSubmit.disabled = true;
     }
-    renderDetailsGallery([]);
+    activeStoreCanManagePhotos = false;
+    renderDetailsGallery([], '');
     return;
   }
 
   const photoUrls = Array.isArray(store.dress_photo_urls) ? store.dress_photo_urls : [];
+  const currentUser = getSessionUser();
+  activeStoreCanManagePhotos = Boolean(currentUser && store.owner_email === currentUser);
   detailsName.textContent = store.name || '';
   detailsAddress.textContent = store.location || '';
   detailsPhotoCount.textContent = `${photoUrls.length} picture${photoUrls.length === 1 ? '' : 's'}`;
+  if (detailsOwner) {
+    detailsOwner.textContent = `Owner: ${store.owner_email || ''}`;
+  }
+  if (detailsInviteCode) {
+    detailsInviteCode.textContent = `Invite code: ${store.invite_code || ''}`;
+  }
+  if (detailsCreatedAt) {
+    const readableDate = store.created_at
+      ? new Date(store.created_at).toLocaleString()
+      : '';
+    detailsCreatedAt.textContent = readableDate ? `Created: ${readableDate}` : '';
+  }
   if (dressPhotoForm) {
     dressPhotoForm.dataset.storeId = String(store.id);
   }
   if (dressPhotoSubmit) {
-    dressPhotoSubmit.disabled = false;
+    dressPhotoSubmit.disabled = !activeStoreCanManagePhotos;
   }
-  renderDetailsGallery(photoUrls);
+  if (dressPhotoInput) {
+    dressPhotoInput.disabled = !activeStoreCanManagePhotos;
+  }
+  renderDetailsGallery(photoUrls, String(store.id));
 };
 
 const loadStoreDetailsPage = async () => {
@@ -337,6 +434,7 @@ if (dressPhotoForm) {
     setDressPhotoMessage('Uploading photo...', '');
 
     try {
+      formData.append('owner_email', getSessionUser());
       const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
         method: 'POST',
         body: formData,
@@ -680,3 +778,11 @@ if (storeForm && storeGrid) {
 }
 
 loadStoreDetailsPage();
+
+if (detailsPreviewImage) {
+  detailsPreviewImage.addEventListener('click', () => {
+    if (selectedPreviewPhotoUrl) {
+      openPhotoLightbox(selectedPreviewPhotoUrl);
+    }
+  });
+}
