@@ -22,6 +22,7 @@ DB_PATH = BASE_DIR / "stores.db"
 DEFAULT_DRESS_PHOTO_PATH = "images/default/default-dress.svg"
 STORE_DRESS_PHOTO_BASE_DIR = BASE_DIR / "images" / "stores"
 ALLOWED_DRESS_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
+DEFAULT_SESSION_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
 
 
 def init_db() -> None:
@@ -134,6 +135,19 @@ def get_default_dress_photo_path() -> str:
         if (BASE_DIR / relative_candidate).exists():
             return relative_candidate
     return DEFAULT_DRESS_PHOTO_PATH
+
+
+def list_default_dress_photos() -> list[str]:
+    default_dir = BASE_DIR / "images" / "default"
+    if not default_dir.exists() or not default_dir.is_dir():
+        return [get_default_dress_photo_path()]
+
+    photos = [
+        str(path.relative_to(BASE_DIR)).replace("\\", "/")
+        for path in sorted(default_dir.iterdir())
+        if path.is_file() and path.suffix.lower() in DEFAULT_SESSION_EXTENSIONS
+    ]
+    return photos or [get_default_dress_photo_path()]
 
 
 def normalize_store_payload(store: dict) -> dict:
@@ -866,6 +880,38 @@ def render_store_details(copy: dict) -> str:
             <p class="auth-message form-message" data-dress-metadata-message role="status" aria-live="polite"></p>
           </form>
         </div>
+
+        <div class="dashboard-panel session-panel" data-swipe-session-panel>
+          <div class="session-panel-header">
+            <div>
+              <h3>{escape(copy.get("sessionTitle") or "Default Session")}</h3>
+              <p class="lead">{escape(copy.get("sessionSubtitle") or "Start a quick like/dislike swiping session from your default dress folder.")}</p>
+            </div>
+            <button class="button" type="button" data-start-session-button>Start a Session</button>
+          </div>
+          <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
+          <div class="swipe-workspace is-hidden" data-swipe-workspace>
+            <div class="swipe-card" data-swipe-card>
+              <span class="swipe-chip" data-swipe-category-chip></span>
+              <img class="swipe-image" data-swipe-image alt="Dress session photo" />
+              <p class="swipe-caption" data-swipe-caption></p>
+            </div>
+            <div class="swipe-actions">
+              <button class="button secondary swipe-action" type="button" data-swipe-dislike>
+                ← Dislike
+              </button>
+              <button class="button swipe-action" type="button" data-swipe-like>
+                Like →
+              </button>
+            </div>
+            <p class="store-detail-meta" data-swipe-progress></p>
+          </div>
+          <div class="session-results is-hidden" data-session-results>
+            <h4>Session Insights</h4>
+            <p class="store-detail-location">Categories your client loved and passed on the most.</p>
+            <div class="session-bars" data-session-bars></div>
+          </div>
+        </div>
       </div>
     """
 
@@ -1276,6 +1322,12 @@ class LandingHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/default-dress-photos":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"photos": list_default_dress_photos()}).encode("utf-8"))
+            return
         if parsed.path == "/api/tag-options":
             try:
                 options = load_tag_options()
