@@ -21,6 +21,17 @@ const dressPriceInput = dressMetadataForm?.querySelector('[data-dress-price-inpu
 const dressMetadataSubmit = dressMetadataForm?.querySelector('[data-dress-metadata-submit]');
 const dressMetadataMessage = dressMetadataForm?.querySelector('[data-dress-metadata-message]');
 const dressTagOptionsContainer = dressMetadataForm?.querySelector('[data-dress-tag-options]');
+const startSessionButton = document.querySelector('[data-start-session-button]');
+const sessionMessage = document.querySelector('[data-session-message]');
+const swipeWorkspace = document.querySelector('[data-swipe-workspace]');
+const swipeCategoryChip = document.querySelector('[data-swipe-category-chip]');
+const swipeImage = document.querySelector('[data-swipe-image]');
+const swipeCaption = document.querySelector('[data-swipe-caption]');
+const swipeProgress = document.querySelector('[data-swipe-progress]');
+const dislikeButton = document.querySelector('[data-swipe-dislike]');
+const likeButton = document.querySelector('[data-swipe-like]');
+const sessionResults = document.querySelector('[data-session-results]');
+const sessionBars = document.querySelector('[data-session-bars]');
 const sessionKey = 'bridalStudioCurrentUser';
 const usersKey = 'bridalStudioUsers';
 const loginLink = document.querySelector('[data-auth-login-link]');
@@ -38,6 +49,11 @@ let selectedStoreId = '';
 let activeStoreCanManagePhotos = false;
 let currentDressPhotos = [];
 let tagOptions = null;
+
+let swipeDeck = [];
+let swipeIndex = 0;
+let swipeLikes = [];
+let swipeDislikes = [];
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
@@ -192,6 +208,207 @@ const loadTagOptions = async () => {
     return tagOptions;
   } catch (error) {
     return null;
+  }
+};
+
+
+const setSessionMessage = (message, type) => {
+  if (!sessionMessage) {
+    return;
+  }
+  sessionMessage.textContent = message;
+  sessionMessage.classList.remove('is-error', 'is-success');
+  if (type === 'error') {
+    sessionMessage.classList.add('is-error');
+  }
+  if (type === 'success') {
+    sessionMessage.classList.add('is-success');
+  }
+};
+
+const normalizeToken = (value) =>
+  (value || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-');
+
+const buildTagToCategoryMap = () => {
+  const map = new Map();
+  if (!tagOptions || !Array.isArray(tagOptions.categories)) {
+    return map;
+  }
+  tagOptions.categories.forEach((category) => {
+    const label = getLocalizedValue(category.label, 'en', tagOptions.defaultLocale || 'en') || category.id;
+    (category.tags || []).forEach((tag) => {
+      map.set(normalizeToken(tag.id), label);
+      map.set(normalizeToken(getLocalizedValue(tag.label, 'en', tagOptions.defaultLocale || 'en')), label);
+    });
+  });
+  return map;
+};
+
+const resolvePhotoCategory = (photoPath, tagToCategoryMap, fallbackCategories = []) => {
+  const tokens = normalizeToken(photoPath).split('-').filter(Boolean);
+  for (const token of tokens) {
+    if (tagToCategoryMap.has(token)) {
+      return tagToCategoryMap.get(token);
+    }
+  }
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    const pair = `${tokens[index]}-${tokens[index + 1]}`;
+    if (tagToCategoryMap.has(pair)) {
+      return tagToCategoryMap.get(pair);
+    }
+  }
+  if (fallbackCategories.length) {
+    const numericSeed = tokens.join('').split('').reduce((total, char) => total + char.charCodeAt(0), 0);
+    return fallbackCategories[numericSeed % fallbackCategories.length];
+  }
+  return 'General Style';
+};
+
+const renderSwipeCard = () => {
+  if (!swipeWorkspace || !swipeImage || !swipeCaption || !swipeProgress || !swipeCategoryChip || !dislikeButton || !likeButton) {
+    return;
+  }
+  if (!swipeDeck.length || swipeIndex >= swipeDeck.length) {
+    swipeWorkspace.classList.add('is-hidden');
+    return;
+  }
+
+  const current = swipeDeck[swipeIndex];
+  swipeImage.src = current.photoPath;
+  swipeCaption.textContent = current.fileName;
+  swipeCategoryChip.textContent = current.category;
+  swipeProgress.textContent = `Look ${swipeIndex + 1} of ${swipeDeck.length}`;
+  dislikeButton.disabled = false;
+  likeButton.disabled = false;
+};
+
+const tallyCategories = (items) => {
+  const counts = new Map();
+  items.forEach((item) => {
+    const label = item.category || 'General Style';
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count);
+};
+
+const renderSessionResults = () => {
+  if (!sessionResults || !sessionBars) {
+    return;
+  }
+  sessionBars.innerHTML = '';
+
+  const liked = tallyCategories(swipeLikes).slice(0, 4);
+  const disliked = tallyCategories(swipeDislikes).slice(0, 4);
+  const strongest = Math.max(1, ...liked.map((entry) => entry.count), ...disliked.map((entry) => entry.count));
+
+  const addBar = (entry, sentiment) => {
+    const row = document.createElement('div');
+    row.className = `session-bar-row ${sentiment}`;
+
+    const label = document.createElement('div');
+    label.className = 'session-bar-label';
+    label.textContent = `${sentiment === 'like' ? 'Liked' : 'Disliked'} • ${entry.category}`;
+
+    const track = document.createElement('div');
+    track.className = 'session-bar-track';
+
+    const fill = document.createElement('div');
+    fill.className = 'session-bar-fill';
+    fill.style.width = `${Math.max(10, (entry.count / strongest) * 100)}%`;
+    fill.textContent = `${entry.count}`;
+
+    track.appendChild(fill);
+    row.appendChild(label);
+    row.appendChild(track);
+    sessionBars.appendChild(row);
+  };
+
+  if (!liked.length && !disliked.length) {
+    const empty = document.createElement('p');
+    empty.className = 'store-detail-location';
+    empty.textContent = 'No swipes recorded yet.';
+    sessionBars.appendChild(empty);
+  } else {
+    liked.forEach((entry) => addBar(entry, 'like'));
+    disliked.forEach((entry) => addBar(entry, 'dislike'));
+  }
+
+  sessionResults.classList.remove('is-hidden');
+  setSessionMessage('Session complete! Here is what your client loved most.', 'success');
+};
+
+const handleSwipe = (direction) => {
+  if (swipeIndex >= swipeDeck.length) {
+    return;
+  }
+  const current = swipeDeck[swipeIndex];
+  if (direction === 'like') {
+    swipeLikes.push(current);
+  } else {
+    swipeDislikes.push(current);
+  }
+  swipeIndex += 1;
+
+  if (swipeIndex >= swipeDeck.length) {
+    renderSessionResults();
+    if (swipeWorkspace) {
+      swipeWorkspace.classList.add('is-hidden');
+    }
+    return;
+  }
+
+  renderSwipeCard();
+};
+
+const startDefaultSession = async () => {
+  if (!activeStoreCanManagePhotos) {
+    setSessionMessage('Only the store owner can start a session.', 'error');
+    return;
+  }
+
+  setSessionMessage('Preparing swipe deck...', '');
+  await loadTagOptions();
+
+  try {
+    const response = await fetch('/api/default-dress-photos');
+    if (!response.ok) {
+      setSessionMessage('Unable to load default dress photos.', 'error');
+      return;
+    }
+    const data = await response.json();
+    const photos = Array.isArray(data.photos) ? data.photos : [];
+    if (!photos.length) {
+      setSessionMessage('No default photos were found.', 'error');
+      return;
+    }
+
+    const tagMap = buildTagToCategoryMap();
+    const fallbackCategories = Array.from(new Set(Array.from(tagMap.values())));
+    swipeDeck = photos.map((photoPath) => ({
+      photoPath,
+      fileName: photoPath.split('/').pop() || photoPath,
+      category: resolvePhotoCategory(photoPath, tagMap, fallbackCategories),
+    }));
+    swipeIndex = 0;
+    swipeLikes = [];
+    swipeDislikes = [];
+
+    if (swipeWorkspace) {
+      swipeWorkspace.classList.remove('is-hidden');
+    }
+    if (sessionResults) {
+      sessionResults.classList.add('is-hidden');
+    }
+    renderSwipeCard();
+    setSessionMessage('Swipe right for like and left for dislike. You can also use arrow keys.', '');
+  } catch (error) {
+    setSessionMessage('Unable to start this session right now.', 'error');
   }
 };
 
@@ -464,6 +681,16 @@ const updateDetailsSummary = (store) => {
     if (dressMetadataSubmit) {
       dressMetadataSubmit.disabled = true;
     }
+    if (startSessionButton) {
+      startSessionButton.disabled = true;
+    }
+    if (swipeWorkspace) {
+      swipeWorkspace.classList.add('is-hidden');
+    }
+    if (sessionResults) {
+      sessionResults.classList.add('is-hidden');
+    }
+    setSessionMessage('', '');
     activeStoreCanManagePhotos = false;
     renderDetailsGallery([], '');
     return;
@@ -501,6 +728,20 @@ const updateDetailsSummary = (store) => {
   }
   if (dressMetadataSubmit) {
     dressMetadataSubmit.disabled = !activeStoreCanManagePhotos;
+  }
+  if (startSessionButton) {
+    startSessionButton.disabled = !activeStoreCanManagePhotos;
+  }
+  if (!activeStoreCanManagePhotos) {
+    if (swipeWorkspace) {
+      swipeWorkspace.classList.add('is-hidden');
+    }
+    if (sessionResults) {
+      sessionResults.classList.add('is-hidden');
+    }
+    setSessionMessage('Only the store owner can run swipe sessions.', 'error');
+  } else {
+    setSessionMessage('', '');
   }
   renderDetailsGallery(dressPhotos, String(store.id));
 };
@@ -957,6 +1198,32 @@ if (storeForm && storeGrid) {
 
   loadStores();
 }
+
+if (startSessionButton) {
+  startSessionButton.addEventListener('click', startDefaultSession);
+}
+
+if (dislikeButton) {
+  dislikeButton.addEventListener('click', () => handleSwipe('dislike'));
+}
+
+if (likeButton) {
+  likeButton.addEventListener('click', () => handleSwipe('like'));
+}
+
+document.addEventListener('keydown', (event) => {
+  if (!swipeWorkspace || swipeWorkspace.classList.contains('is-hidden')) {
+    return;
+  }
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    handleSwipe('dislike');
+  }
+  if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    handleSwipe('like');
+  }
+});
 
 loadStoreDetailsPage();
 
