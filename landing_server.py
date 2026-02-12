@@ -43,6 +43,37 @@ def init_db() -> None:
         column_names = {column[1] for column in columns}
         if "dress_photo_path" not in column_names:
             conn.execute("ALTER TABLE stores ADD COLUMN dress_photo_path TEXT")
+        if "invite_code" not in column_names:
+            conn.execute("ALTER TABLE stores ADD COLUMN invite_code TEXT")
+        if "created_at" not in column_names:
+            conn.execute("ALTER TABLE stores ADD COLUMN created_at TEXT")
+
+        # Backfill newly added columns for stores created before these fields existed.
+        existing_codes = {
+            row[0]
+            for row in conn.execute(
+                "SELECT UPPER(invite_code) FROM stores WHERE invite_code IS NOT NULL AND TRIM(invite_code) != ''"
+            ).fetchall()
+            if row[0]
+        }
+        missing_code_rows = conn.execute(
+            "SELECT id FROM stores WHERE invite_code IS NULL OR TRIM(invite_code) = ''"
+        ).fetchall()
+        for row in missing_code_rows:
+            invite_code = generate_invite_code()
+            while invite_code in existing_codes:
+                invite_code = generate_invite_code()
+            existing_codes.add(invite_code)
+            conn.execute(
+                "UPDATE stores SET invite_code = ? WHERE id = ?",
+                (invite_code, row[0]),
+            )
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            "UPDATE stores SET created_at = ? WHERE created_at IS NULL OR TRIM(created_at) = ''",
+            (now_iso,),
+        )
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS store_members (
