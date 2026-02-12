@@ -36,11 +36,12 @@ Stores can now have their own dress image in the **Stores** page.
 How it works:
 1. Open `http://localhost:8000/stores` and select a store tile.
 2. In the store detail card, use **Dress photo** to upload a `.png`, `.jpg`, `.jpeg`, or `.webp` file.
-3. The server saves that file under `images/store_dresses/` using the store id in the filename (for example: `images/store_dresses/store-3.jpg`).
+3. The server saves that file under `images/stores/store-<store_id>/` with a unique filename (for example: `images/stores/store-3/dress-a1b2c3d4.jpg`).
 4. The photo is linked only to that store.
 
 Default photo behavior:
-- If a store has no uploaded photo yet, the app automatically uses `images/default-dress.svg`, `images/default-dress.png`, `images/default-dress.jpg`, or `images/default-dress.jpeg` (first one found).
+- If a store has no uploaded photo yet, the app automatically uses `images/default/default-dress.svg`, `images/default/default-dress.png`, `images/default/default-dress.jpg`, or `images/default/default-dress.jpeg` (first one found).
+- For backward compatibility, it can still fall back to the previous `images/default-dress.*` location.
 - You can customize the default by replacing one of those files (same base name) or by updating `DEFAULT_DRESS_PHOTO_PATH` in `landing_server.py`.
 
 ## Setup details

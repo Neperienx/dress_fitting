@@ -1,0 +1,15 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6EEF3"/>
+      <stop offset="1" stop-color="#EFE3EA"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="290" y="120" width="620" height="660" rx="40" fill="#FFFFFF" stroke="#DCC7D6" stroke-width="10"/>
+  <path d="M600 250L690 360L640 720H560L510 360L600 250Z" fill="#E6D1DF"/>
+  <circle cx="600" cy="190" r="42" fill="#D5B7CB"/>
+  <text x="600" y="815" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="42" fill="#8B4C70">
+    Add a dress photo for this store
+  </text>
+</svg>
