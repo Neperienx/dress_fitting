@@ -21,3 +21,8 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Uploaded/generated image assets
+*.png
+*.jpeg
+*.jpg

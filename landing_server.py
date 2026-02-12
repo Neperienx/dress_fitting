@@ -19,8 +19,8 @@ CONTENT_PATH = BASE_DIR / "landing-content.json"
 TAG_OPTIONS_PATH = BASE_DIR / "tag-options.json"
 TEMPLATE_PATH = BASE_DIR / "index.html"
 DB_PATH = BASE_DIR / "stores.db"
-DEFAULT_DRESS_PHOTO_PATH = "images/default-dress.svg"
-STORE_DRESS_PHOTO_DIR = BASE_DIR / "images" / "store_dresses"
+DEFAULT_DRESS_PHOTO_PATH = "images/default/default-dress.svg"
+STORE_DRESS_PHOTO_BASE_DIR = BASE_DIR / "images" / "stores"
 ALLOWED_DRESS_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
@@ -124,6 +124,10 @@ def get_default_dress_photo_path() -> str:
         source_path.with_suffix(".png"),
         source_path.with_suffix(".jpg"),
         source_path.with_suffix(".jpeg"),
+        Path("images/default-dress.svg"),
+        Path("images/default-dress.png"),
+        Path("images/default-dress.jpg"),
+        Path("images/default-dress.jpeg"),
     ]
     for candidate in default_candidates:
         relative_candidate = str(candidate)
@@ -263,9 +267,10 @@ def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str 
     extension = Path(filename).suffix.lower()
     if extension not in ALLOWED_DRESS_EXTENSIONS:
         return None
-    STORE_DRESS_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+    store_dir = STORE_DRESS_PHOTO_BASE_DIR / f"store-{store_id}"
+    store_dir.mkdir(parents=True, exist_ok=True)
     unique_suffix = secrets.token_hex(8)
-    relative_path = Path("images") / "store_dresses" / f"store-{store_id}-{unique_suffix}{extension}"
+    relative_path = Path("images") / "stores" / f"store-{store_id}" / f"dress-{unique_suffix}{extension}"
     full_path = BASE_DIR / relative_path
     full_path.write_bytes(content)
     created_at = datetime.now(timezone.utc).isoformat()
