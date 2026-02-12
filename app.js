@@ -798,6 +798,9 @@ if (storeForm && storeGrid) {
     tile.dataset.manager = `Owner: ${store.owner_email}`;
     tile.dataset.invite = store.invite_code;
     const dressPhotos = Array.isArray(store.dress_photos) ? store.dress_photos : [];
+    const photoUrls = dressPhotos
+      .map((photo) => photo?.photo_path)
+      .filter((photoPath) => typeof photoPath === 'string' && photoPath.trim());
     tile.dataset.photoUrls = JSON.stringify(photoUrls);
     tile.dataset.photoUrl = store.dress_photo_url || 'images/default-dress.svg';
     if (store.id) {
