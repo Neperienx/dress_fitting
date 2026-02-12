@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent
 CONTENT_PATH = BASE_DIR / "landing-content.json"
+TAG_OPTIONS_PATH = BASE_DIR / "tag-options.json"
 TEMPLATE_PATH = BASE_DIR / "index.html"
 DB_PATH = BASE_DIR / "stores.db"
 DEFAULT_DRESS_PHOTO_PATH = "images/default-dress.svg"
@@ -60,11 +61,19 @@ def init_db() -> None:
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               store_id INTEGER NOT NULL,
               photo_path TEXT NOT NULL,
+              price REAL,
+              tags_json TEXT,
               created_at TEXT NOT NULL,
               FOREIGN KEY(store_id) REFERENCES stores(id)
             )
             """
         )
+        photo_columns = conn.execute("PRAGMA table_info(store_dress_photos)").fetchall()
+        photo_column_names = {column[1] for column in photo_columns}
+        if "price" not in photo_column_names:
+            conn.execute("ALTER TABLE store_dress_photos ADD COLUMN price REAL")
+        if "tags_json" not in photo_column_names:
+            conn.execute("ALTER TABLE store_dress_photos ADD COLUMN tags_json TEXT")
 
 
 def generate_invite_code() -> str:
@@ -79,9 +88,11 @@ def normalize_photo_path(photo_path: str | None) -> str:
 
 def normalize_store_payload(store: dict) -> dict:
     payload = dict(store)
-    dress_photo_urls = payload.get("dress_photo_urls") or []
+    dress_photos = payload.get("dress_photos") or []
+    dress_photo_urls = [photo.get("photo_path") for photo in dress_photos if photo.get("photo_path")]
     if not dress_photo_urls and payload.get("dress_photo_path"):
         dress_photo_urls = [payload.get("dress_photo_path")]
+    payload["dress_photos"] = dress_photos
     payload["dress_photo_urls"] = dress_photo_urls
     payload["dress_photo_url"] = normalize_photo_path(
         dress_photo_urls[0] if dress_photo_urls else payload.get("dress_photo_path")
@@ -89,17 +100,38 @@ def normalize_store_payload(store: dict) -> dict:
     return payload
 
 
-def fetch_store_dress_photos(conn: sqlite3.Connection, store_id: int) -> list[str]:
+def parse_tags(raw_tags: str | None) -> list[str]:
+    if not raw_tags:
+        return []
+    try:
+        tags = json.loads(raw_tags)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(tags, list):
+        return []
+    return [str(tag) for tag in tags if str(tag).strip()]
+
+
+def fetch_store_dress_photos(conn: sqlite3.Connection, store_id: int) -> list[dict]:
     rows = conn.execute(
         """
-        SELECT photo_path
+        SELECT photo_path, price, tags_json
         FROM store_dress_photos
         WHERE store_id = ?
         ORDER BY created_at DESC, id DESC
         """,
         (store_id,),
     ).fetchall()
-    return [row[0] for row in rows]
+    photos = []
+    for row in rows:
+        photos.append(
+            {
+                "photo_path": row[0],
+                "price": row[1],
+                "tags": parse_tags(row[2]),
+            }
+        )
+    return photos
 
 
 def fetch_stores(user_email: str) -> list[dict]:
@@ -119,7 +151,7 @@ def fetch_stores(user_email: str) -> list[dict]:
         stores = []
         for row in rows:
             store = dict(row)
-            store["dress_photo_urls"] = fetch_store_dress_photos(conn, store["id"])
+            store["dress_photos"] = fetch_store_dress_photos(conn, store["id"])
             stores.append(normalize_store_payload(store))
     return stores
 
@@ -175,7 +207,7 @@ def join_store(invite_code: str, member_email: str) -> dict | None:
             (store["id"], member_email, joined_at),
         )
         normalized_store = dict(store)
-        normalized_store["dress_photo_urls"] = fetch_store_dress_photos(
+        normalized_store["dress_photos"] = fetch_store_dress_photos(
             conn, normalized_store["id"]
         )
     return normalize_store_payload(normalized_store)
@@ -255,8 +287,32 @@ def fetch_store_by_id(store_id: int) -> dict | None:
         if not store:
             return None
         payload = dict(store)
-        payload["dress_photo_urls"] = fetch_store_dress_photos(conn, store_id)
+        payload["dress_photos"] = fetch_store_dress_photos(conn, store_id)
     return normalize_store_payload(payload)
+
+
+def update_store_dress_photo_metadata(
+    store_id: int, photo_path: str, price: float | None, tags: list[str]
+) -> bool:
+    normalized_photo_path = (photo_path or "").strip()
+    if not normalized_photo_path:
+        return False
+    tags_json = json.dumps(tags)
+    with sqlite3.connect(DB_PATH) as conn:
+        result = conn.execute(
+            """
+            UPDATE store_dress_photos
+            SET price = ?, tags_json = ?
+            WHERE store_id = ? AND photo_path = ?
+            """,
+            (price, tags_json, store_id, normalized_photo_path),
+        )
+    return result.rowcount > 0
+
+
+def load_tag_options() -> dict:
+    with TAG_OPTIONS_PATH.open("r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 def load_content() -> dict:
@@ -738,6 +794,27 @@ def render_store_details(copy: dict) -> str:
           <h3>{escape(copy.get("galleryTitle") or "Dress photo gallery")}</h3>
           <div class="dress-photo-grid" data-dress-miniatures></div>
         </div>
+
+        <div class="dashboard-panel">
+          <h3>{escape(copy.get("metadataTitle") or "Dress metadata")}</h3>
+          <form class="store-form" data-dress-metadata-form>
+            <label>
+              {escape(copy.get("metadataPriceLabel") or "Price")}
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="{escape(copy.get('metadataPricePlaceholder') or 'e.g. 1299.00')}"
+                data-dress-price-input
+              />
+            </label>
+            <div class="dress-tag-options" data-dress-tag-options></div>
+            <button class="button secondary" type="submit" data-dress-metadata-submit>
+              {escape(copy.get("metadataSaveButton") or "Save metadata")}
+            </button>
+            <p class="auth-message form-message" data-dress-metadata-message role="status" aria-live="polite"></p>
+          </form>
+        </div>
       </div>
     """
 
@@ -987,6 +1064,93 @@ class LandingHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"error": "Not found."}).encode("utf-8"))
 
+    def do_PUT(self) -> None:
+        parsed = urlparse(self.path)
+        metadata_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo-metadata", parsed.path)
+        if not metadata_match:
+            self.send_response(404)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Not found."}).encode("utf-8"))
+            return
+
+        store_id = int(metadata_match.group(1))
+        store = fetch_store_by_id(store_id)
+        if not store:
+            self.send_response(404)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Store not found."}).encode("utf-8"))
+            return
+
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            length = 0
+        payload = self.rfile.read(length).decode("utf-8") if length else ""
+        try:
+            data = json.loads(payload) if payload else {}
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Invalid JSON payload."}).encode("utf-8"))
+            return
+
+        owner_email = (data.get("owner_email") or "").strip().lower()
+        if owner_email != (store.get("owner_email") or "").strip().lower():
+            self.send_response(403)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps({"error": "Only the store owner can update dress metadata."}).encode("utf-8")
+            )
+            return
+
+        photo_path = (data.get("photo_path") or "").strip()
+        raw_tags = data.get("tags")
+        if raw_tags is None:
+            raw_tags = []
+        if not isinstance(raw_tags, list):
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "tags must be an array."}).encode("utf-8"))
+            return
+        tags = [str(tag).strip() for tag in raw_tags if str(tag).strip()]
+
+        raw_price = data.get("price")
+        price = None
+        if raw_price not in (None, ""):
+            try:
+                price = float(raw_price)
+            except (TypeError, ValueError):
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "price must be a number."}).encode("utf-8"))
+                return
+            if price < 0:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "price must be positive."}).encode("utf-8"))
+                return
+
+        updated = update_store_dress_photo_metadata(store_id, photo_path, price, tags)
+        if not updated:
+            self.send_response(404)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Photo not found."}).encode("utf-8"))
+            return
+
+        updated_store = fetch_store_by_id(store_id)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(updated_store).encode("utf-8"))
+
     def do_DELETE(self) -> None:
         parsed = urlparse(self.path)
         dress_photo_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo", parsed.path)
@@ -1061,6 +1225,22 @@ class LandingHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/tag-options":
+            try:
+                options = load_tag_options()
+            except (FileNotFoundError, json.JSONDecodeError):
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Tag options are unavailable."}).encode("utf-8")
+                )
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(options).encode("utf-8"))
+            return
         if parsed.path == "/api/stores":
             query = parse_qs(parsed.query)
             owner_email = (query.get("owner", [""])[0]).strip().lower()

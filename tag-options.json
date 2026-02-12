@@ -1,0 +1,89 @@
+{
+  "defaultLocale": "en",
+  "categories": [
+    {
+      "id": "dress_cut",
+      "label": {
+        "en": "Dress cut",
+        "fr": "Coupe de robe",
+        "es": "Corte del vestido"
+      },
+      "tags": [
+        {
+          "id": "a-line",
+          "label": {
+            "en": "A-line",
+            "fr": "Coupe A",
+            "es": "Línea A"
+          }
+        },
+        {
+          "id": "ball-gown",
+          "label": {
+            "en": "Ball gown",
+            "fr": "Robe de bal",
+            "es": "Vestido de gala"
+          }
+        },
+        {
+          "id": "mermaid",
+          "label": {
+            "en": "Mermaid",
+            "fr": "Sirène",
+            "es": "Sirena"
+          }
+        },
+        {
+          "id": "sheath",
+          "label": {
+            "en": "Sheath",
+            "fr": "Fourreau",
+            "es": "Recto"
+          }
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": {
+        "en": "Accessories",
+        "fr": "Accessoires",
+        "es": "Accesorios"
+      },
+      "tags": [
+        {
+          "id": "veil",
+          "label": {
+            "en": "Veil",
+            "fr": "Voile",
+            "es": "Velo"
+          }
+        },
+        {
+          "id": "belt",
+          "label": {
+            "en": "Belt",
+            "fr": "Ceinture",
+            "es": "Cinturón"
+          }
+        },
+        {
+          "id": "gloves",
+          "label": {
+            "en": "Gloves",
+            "fr": "Gants",
+            "es": "Guantes"
+          }
+        },
+        {
+          "id": "cape",
+          "label": {
+            "en": "Cape",
+            "fr": "Cape",
+            "es": "Capa"
+          }
+        }
+      ]
+    }
+  ]
+}

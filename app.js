@@ -16,6 +16,11 @@ const dressPhotoForm = document.querySelector('[data-dress-photo-form]');
 const dressPhotoInput = dressPhotoForm?.querySelector('[data-dress-photo-input]');
 const dressPhotoSubmit = dressPhotoForm?.querySelector('[data-dress-photo-submit]');
 const dressPhotoMessage = dressPhotoForm?.querySelector('[data-dress-photo-message]');
+const dressMetadataForm = document.querySelector('[data-dress-metadata-form]');
+const dressPriceInput = dressMetadataForm?.querySelector('[data-dress-price-input]');
+const dressMetadataSubmit = dressMetadataForm?.querySelector('[data-dress-metadata-submit]');
+const dressMetadataMessage = dressMetadataForm?.querySelector('[data-dress-metadata-message]');
+const dressTagOptionsContainer = dressMetadataForm?.querySelector('[data-dress-tag-options]');
 const sessionKey = 'bridalStudioCurrentUser';
 const usersKey = 'bridalStudioUsers';
 const loginLink = document.querySelector('[data-auth-login-link]');
@@ -28,7 +33,11 @@ const logoutButton = document.querySelector('[data-auth-logout]');
 let photoLightbox = null;
 let photoLightboxImage = null;
 let selectedPreviewPhotoUrl = '';
+let selectedDressPhotoPath = '';
+let selectedStoreId = '';
 let activeStoreCanManagePhotos = false;
+let currentDressPhotos = [];
+let tagOptions = null;
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
@@ -146,6 +155,45 @@ if (logoutButton) {
 }
 
 updateHeaderAuth();
+
+const getActiveLocale = () => (document.documentElement?.lang || 'en').trim().toLowerCase() || 'en';
+
+const getLocalizedValue = (labels, locale, fallback = 'en') => {
+  if (!labels || typeof labels !== 'object') {
+    return '';
+  }
+  return labels[locale] || labels[fallback] || Object.values(labels)[0] || '';
+};
+
+const setDressMetadataMessage = (message, type) => {
+  if (!dressMetadataMessage) {
+    return;
+  }
+  dressMetadataMessage.textContent = message;
+  dressMetadataMessage.classList.remove('is-error', 'is-success');
+  if (type === 'error') {
+    dressMetadataMessage.classList.add('is-error');
+  }
+  if (type === 'success') {
+    dressMetadataMessage.classList.add('is-success');
+  }
+};
+
+const loadTagOptions = async () => {
+  if (tagOptions) {
+    return tagOptions;
+  }
+  try {
+    const response = await fetch('/api/tag-options');
+    if (!response.ok) {
+      return null;
+    }
+    tagOptions = await response.json();
+    return tagOptions;
+  } catch (error) {
+    return null;
+  }
+};
 
 const setDressPhotoMessage = (message, type) => {
   if (!dressPhotoMessage) {
@@ -265,14 +313,80 @@ const removeDressPhoto = async (storeId, photoUrl) => {
   }
 };
 
-const renderDetailsGallery = (photoUrls, storeId) => {
+const renderTagOptions = (selectedTags = []) => {
+  if (!dressTagOptionsContainer) {
+    return;
+  }
+  dressTagOptionsContainer.innerHTML = '';
+  const options = tagOptions;
+  const locale = getActiveLocale();
+  if (!options || !Array.isArray(options.categories)) {
+    const empty = document.createElement('p');
+    empty.className = 'store-detail-location';
+    empty.textContent = 'Tag options unavailable.';
+    dressTagOptionsContainer.appendChild(empty);
+    return;
+  }
+
+  options.categories.forEach((category) => {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'dress-tag-category';
+
+    const legend = document.createElement('legend');
+    legend.textContent = getLocalizedValue(category.label, locale, options.defaultLocale || 'en') || category.id;
+    fieldset.appendChild(legend);
+
+    const group = document.createElement('div');
+    group.className = 'dress-tag-group';
+    (category.tags || []).forEach((tag) => {
+      const optionLabel = document.createElement('label');
+      optionLabel.className = 'dress-tag-option';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = tag.id;
+      checkbox.checked = selectedTags.includes(tag.id);
+      checkbox.dataset.tagId = tag.id;
+      checkbox.disabled = !activeStoreCanManagePhotos;
+
+      const text = document.createElement('span');
+      text.textContent = getLocalizedValue(tag.label, locale, options.defaultLocale || 'en') || tag.id;
+
+      optionLabel.appendChild(checkbox);
+      optionLabel.appendChild(text);
+      group.appendChild(optionLabel);
+    });
+
+    fieldset.appendChild(group);
+    dressTagOptionsContainer.appendChild(fieldset);
+  });
+};
+
+const getCurrentDressPhoto = () => currentDressPhotos.find((photo) => photo.photo_path === selectedDressPhotoPath) || null;
+
+const selectDressPhoto = (photoPath) => {
+  selectedDressPhotoPath = photoPath || '';
+  setPreviewPhoto(photoPath || '');
+  const selectedPhoto = getCurrentDressPhoto();
+  if (dressPriceInput) {
+    dressPriceInput.value = selectedPhoto && typeof selectedPhoto.price === 'number' ? selectedPhoto.price : '';
+  }
+  renderTagOptions(selectedPhoto?.tags || []);
+};
+
+const renderDetailsGallery = (dressPhotos, storeId) => {
   if (!detailMiniatures) {
     return;
   }
   detailMiniatures.innerHTML = '';
-  setPreviewPhoto(photoUrls[0] || '');
+  const safePhotos = Array.isArray(dressPhotos) ? dressPhotos : [];
+  currentDressPhotos = safePhotos;
+  selectedStoreId = storeId || '';
+  const firstPath = safePhotos[0]?.photo_path || '';
+  const currentPathStillExists = safePhotos.some((photo) => photo.photo_path === selectedDressPhotoPath);
+  selectDressPhoto(currentPathStillExists ? selectedDressPhotoPath : firstPath);
 
-  if (!photoUrls.length) {
+  if (!safePhotos.length) {
     const empty = document.createElement('p');
     empty.className = 'store-detail-location';
     empty.textContent = 'No dress pictures yet. Upload your first one above.';
@@ -280,7 +394,8 @@ const renderDetailsGallery = (photoUrls, storeId) => {
     return;
   }
 
-  photoUrls.forEach((photoUrl, index) => {
+  safePhotos.forEach((photo, index) => {
+    const photoUrl = photo.photo_path;
     const tile = document.createElement('div');
     tile.className = 'dress-grid-tile';
 
@@ -295,13 +410,14 @@ const renderDetailsGallery = (photoUrls, storeId) => {
 
     previewButton.appendChild(image);
     previewButton.addEventListener('click', () => {
-      setPreviewPhoto(photoUrl);
+      selectDressPhoto(photoUrl);
       const allButtons = detailMiniatures.querySelectorAll('.store-miniature-button');
       allButtons.forEach((button) => button.classList.remove('is-selected'));
       previewButton.classList.add('is-selected');
+      setDressMetadataMessage('', '');
     });
 
-    if (photoUrl === selectedPreviewPhotoUrl || (!selectedPreviewPhotoUrl && index === 0)) {
+    if (photoUrl === selectedDressPhotoPath || (!selectedDressPhotoPath && index === 0)) {
       previewButton.classList.add('is-selected');
     }
     tile.appendChild(previewButton);
@@ -341,17 +457,24 @@ const updateDetailsSummary = (store) => {
     if (dressPhotoSubmit) {
       dressPhotoSubmit.disabled = true;
     }
+    if (dressPriceInput) {
+      dressPriceInput.value = '';
+      dressPriceInput.disabled = true;
+    }
+    if (dressMetadataSubmit) {
+      dressMetadataSubmit.disabled = true;
+    }
     activeStoreCanManagePhotos = false;
     renderDetailsGallery([], '');
     return;
   }
 
-  const photoUrls = Array.isArray(store.dress_photo_urls) ? store.dress_photo_urls : [];
+  const dressPhotos = Array.isArray(store.dress_photos) ? store.dress_photos : [];
   const currentUser = getSessionUser();
   activeStoreCanManagePhotos = Boolean(currentUser && store.owner_email === currentUser);
   detailsName.textContent = store.name || '';
   detailsAddress.textContent = store.location || '';
-  detailsPhotoCount.textContent = `${photoUrls.length} picture${photoUrls.length === 1 ? '' : 's'}`;
+  detailsPhotoCount.textContent = `${dressPhotos.length} picture${dressPhotos.length === 1 ? '' : 's'}`;
   if (detailsOwner) {
     detailsOwner.textContent = `Owner: ${store.owner_email || ''}`;
   }
@@ -373,7 +496,13 @@ const updateDetailsSummary = (store) => {
   if (dressPhotoInput) {
     dressPhotoInput.disabled = !activeStoreCanManagePhotos;
   }
-  renderDetailsGallery(photoUrls, String(store.id));
+  if (dressPriceInput) {
+    dressPriceInput.disabled = !activeStoreCanManagePhotos;
+  }
+  if (dressMetadataSubmit) {
+    dressMetadataSubmit.disabled = !activeStoreCanManagePhotos;
+  }
+  renderDetailsGallery(dressPhotos, String(store.id));
 };
 
 const loadStoreDetailsPage = async () => {
@@ -395,6 +524,8 @@ const loadStoreDetailsPage = async () => {
   }
 
   setDressPhotoMessage('', '');
+  setDressMetadataMessage('', '');
+  await loadTagOptions();
   if (dressPhotoSubmit) {
     dressPhotoSubmit.disabled = true;
   }
@@ -453,6 +584,53 @@ if (dressPhotoForm) {
       setDressPhotoMessage('Dress photo uploaded.', 'success');
     } catch (error) {
       setDressPhotoMessage('Unable to upload photo right now.', 'error');
+    }
+  });
+}
+
+
+if (dressMetadataForm) {
+  dressMetadataForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!selectedStoreId || !selectedDressPhotoPath) {
+      setDressMetadataMessage('Choose a dress photo first.', 'error');
+      return;
+    }
+    if (!activeStoreCanManagePhotos) {
+      setDressMetadataMessage('Only the store owner can edit metadata.', 'error');
+      return;
+    }
+
+    const selectedTags = Array.from(dressMetadataForm.querySelectorAll('input[type="checkbox"][data-tag-id]:checked')).map((input) => input.value);
+    const rawPrice = dressPriceInput?.value.trim() || '';
+    const price = rawPrice ? Number(rawPrice) : null;
+    if (rawPrice && Number.isNaN(price)) {
+      setDressMetadataMessage('Price must be a valid number.', 'error');
+      return;
+    }
+
+    setDressMetadataMessage('Saving metadata...', '');
+    try {
+      const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/dress-photo-metadata`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner_email: getSessionUser(),
+          photo_path: selectedDressPhotoPath,
+          price,
+          tags: selectedTags,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setDressMetadataMessage(errorData.error || 'Unable to save metadata right now.', 'error');
+        return;
+      }
+      const store = await response.json();
+      updateDetailsSummary(store);
+      setDressMetadataMessage('Metadata saved.', 'success');
+    } catch (error) {
+      setDressMetadataMessage('Unable to save metadata right now.', 'error');
     }
   });
 }
@@ -619,7 +797,7 @@ if (storeForm && storeGrid) {
     tile.dataset.location = store.location;
     tile.dataset.manager = `Owner: ${store.owner_email}`;
     tile.dataset.invite = store.invite_code;
-    const photoUrls = Array.isArray(store.dress_photo_urls) ? store.dress_photo_urls : [];
+    const dressPhotos = Array.isArray(store.dress_photos) ? store.dress_photos : [];
     tile.dataset.photoUrls = JSON.stringify(photoUrls);
     tile.dataset.photoUrl = store.dress_photo_url || 'images/default-dress.svg';
     if (store.id) {
