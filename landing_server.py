@@ -114,6 +114,21 @@ def generate_invite_code() -> str:
 def normalize_photo_path(photo_path: str | None) -> str:
     if photo_path:
         return photo_path
+    return get_default_dress_photo_path()
+
+
+def get_default_dress_photo_path() -> str:
+    source_path = Path(DEFAULT_DRESS_PHOTO_PATH)
+    default_candidates = [
+        source_path,
+        source_path.with_suffix(".png"),
+        source_path.with_suffix(".jpg"),
+        source_path.with_suffix(".jpeg"),
+    ]
+    for candidate in default_candidates:
+        relative_candidate = str(candidate)
+        if (BASE_DIR / relative_candidate).exists():
+            return relative_candidate
     return DEFAULT_DRESS_PHOTO_PATH
 
 
@@ -206,7 +221,7 @@ def create_store(name: str, location: str, owner_email: str) -> dict:
         "owner_email": owner_email,
         "dress_photo_path": None,
         "dress_photo_urls": [],
-        "dress_photo_url": DEFAULT_DRESS_PHOTO_PATH,
+        "dress_photo_url": get_default_dress_photo_path(),
         "invite_code": invite_code,
         "created_at": created_at,
     }
@@ -667,7 +682,7 @@ def render_dashboard(copy: dict) -> str:
                 location=escape(store.get("location")),
                 manager=escape(store.get("manager")),
                 invite=escape(store.get("inviteCode")),
-                photo_url=escape(store.get("photoUrl") or DEFAULT_DRESS_PHOTO_PATH),
+                photo_url=escape(store.get("photoUrl") or get_default_dress_photo_path()),
                 photo_urls=escape(json.dumps(store.get("dress_photo_urls") or [])),
                 store_id=escape(store.get("id")),
             )

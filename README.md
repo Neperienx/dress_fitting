@@ -40,8 +40,8 @@ How it works:
 4. The photo is linked only to that store.
 
 Default photo behavior:
-- If a store has no uploaded photo yet, the app shows `images/default-dress.svg` automatically.
-- You can customize the default by replacing that file (keep the same path/name) or by updating `DEFAULT_DRESS_PHOTO_PATH` in `landing_server.py`.
+- If a store has no uploaded photo yet, the app automatically uses `images/default-dress.svg`, `images/default-dress.png`, `images/default-dress.jpg`, or `images/default-dress.jpeg` (first one found).
+- You can customize the default by replacing one of those files (same base name) or by updating `DEFAULT_DRESS_PHOTO_PATH` in `landing_server.py`.
 
 ## Setup details
 1. Copy env vars:
