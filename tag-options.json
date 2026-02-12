@@ -2,27 +2,27 @@
   "defaultLocale": "en",
   "categories": [
     {
-      "id": "dress_cut",
+      "id": "core_silhouette_coverage",
       "label": {
-        "en": "Dress cut",
-        "fr": "Coupe de robe",
-        "es": "Corte del vestido"
+        "en": "Core Silhouette Coverage",
+        "fr": "Silhouette principale",
+        "es": "Cobertura de silueta principal"
       },
       "tags": [
+        {
+          "id": "ball-gown",
+          "label": {
+            "en": "Ball Gown",
+            "fr": "Robe de bal",
+            "es": "Vestido de gala"
+          }
+        },
         {
           "id": "a-line",
           "label": {
             "en": "A-line",
             "fr": "Coupe A",
             "es": "Línea A"
-          }
-        },
-        {
-          "id": "ball-gown",
-          "label": {
-            "en": "Ball gown",
-            "fr": "Robe de bal",
-            "es": "Vestido de gala"
           }
         },
         {
@@ -34,13 +34,98 @@
           }
         },
         {
-          "id": "sheath",
+          "id": "fit-and-flare",
           "label": {
-            "en": "Sheath",
-            "fr": "Fourreau",
-            "es": "Recto"
+            "en": "Fit & Flare",
+            "fr": "Ajustée et évasée",
+            "es": "Entallado y evasé"
+          }
+        },
+        {
+          "id": "sheath-column",
+          "label": {
+            "en": "Sheath / Column",
+            "fr": "Fourreau / Colonne",
+            "es": "Recto / Columna"
+          }
+        },
+        {
+          "id": "empire-waist",
+          "label": {
+            "en": "Empire Waist",
+            "fr": "Taille empire",
+            "es": "Cintura imperio"
           }
         }
+      ]
+    },
+    {
+      "id": "neckline_coverage",
+      "label": {
+        "en": "Neckline Coverage",
+        "fr": "Encolure",
+        "es": "Escote"
+      },
+      "tags": [
+        { "id": "sweetheart", "label": { "en": "Sweetheart", "fr": "Cœur", "es": "Corazón" } },
+        { "id": "straight-strapless", "label": { "en": "Straight Strapless", "fr": "Bandeau droit", "es": "Palabra de honor recto" } },
+        { "id": "v-neck", "label": { "en": "V-neck", "fr": "Col en V", "es": "Escote en V" } },
+        { "id": "plunging-v", "label": { "en": "Plunging V", "fr": "V plongeant", "es": "V profundo" } },
+        { "id": "square", "label": { "en": "Square", "fr": "Carré", "es": "Cuadrado" } },
+        { "id": "off-shoulder", "label": { "en": "Off-Shoulder", "fr": "Épaules dénudées", "es": "Hombros descubiertos" } },
+        { "id": "high-neck", "label": { "en": "High Neck", "fr": "Col montant", "es": "Cuello alto" } },
+        { "id": "illusion", "label": { "en": "Illusion", "fr": "Illusion", "es": "Ilusión" } },
+        { "id": "halter", "label": { "en": "Halter", "fr": "Dos-nu", "es": "Halter" } }
+      ]
+    },
+    {
+      "id": "back_types",
+      "label": {
+        "en": "Back Types",
+        "fr": "Types de dos",
+        "es": "Tipos de espalda"
+      },
+      "tags": [
+        { "id": "low-back", "label": { "en": "Low Back", "fr": "Dos bas", "es": "Espalda baja" } },
+        { "id": "deep-v-back", "label": { "en": "Deep V Back", "fr": "Dos en V profond", "es": "Espalda V profunda" } },
+        { "id": "button-back", "label": { "en": "Button Back", "fr": "Dos boutonné", "es": "Espalda con botones" } },
+        { "id": "corset", "label": { "en": "Corset", "fr": "Corset", "es": "Corsé" } },
+        { "id": "illusion-lace", "label": { "en": "Illusion Lace", "fr": "Dentelle illusion", "es": "Encaje ilusión" } },
+        { "id": "keyhole", "label": { "en": "Keyhole", "fr": "Goutte", "es": "Abertura ojo de cerradura" } }
+      ]
+    },
+    {
+      "id": "sleeve_type",
+      "label": {
+        "en": "Sleeve Type",
+        "fr": "Type de manches",
+        "es": "Tipo de manga"
+      },
+      "tags": [
+        { "id": "strapless", "label": { "en": "Strapless", "fr": "Sans bretelles", "es": "Sin tirantes" } },
+        { "id": "spaghetti-strap", "label": { "en": "Spaghetti Strap", "fr": "Bretelles fines", "es": "Tirante espagueti" } },
+        { "id": "cap-sleeve", "label": { "en": "Cap Sleeve", "fr": "Manche courte", "es": "Manga casquillo" } },
+        { "id": "long-sleeve", "label": { "en": "Long Sleeve", "fr": "Manche longue", "es": "Manga larga" } },
+        { "id": "three-quarter-sleeve", "label": { "en": "3/4 Sleeve", "fr": "Manche 3/4", "es": "Manga 3/4" } },
+        { "id": "puff-sleeve", "label": { "en": "Puff Sleeve", "fr": "Manche bouffante", "es": "Manga abullonada" } },
+        { "id": "off-shoulder-sleeve", "label": { "en": "Off-Shoulder Sleeve", "fr": "Manche épaules dénudées", "es": "Manga hombros descubiertos" } }
+      ]
+    },
+    {
+      "id": "fabric",
+      "label": {
+        "en": "Fabric",
+        "fr": "Tissu",
+        "es": "Tela"
+      },
+      "tags": [
+        { "id": "satin", "label": { "en": "Satin", "fr": "Satin", "es": "Satén" } },
+        { "id": "mikado", "label": { "en": "Mikado", "fr": "Mikado", "es": "Mikado" } },
+        { "id": "tulle", "label": { "en": "Tulle", "fr": "Tulle", "es": "Tul" } },
+        { "id": "chiffon", "label": { "en": "Chiffon", "fr": "Mousseline", "es": "Gasa" } },
+        { "id": "organza", "label": { "en": "Organza", "fr": "Organza", "es": "Organza" } },
+        { "id": "lace", "label": { "en": "Lace", "fr": "Dentelle", "es": "Encaje" } },
+        { "id": "crepe", "label": { "en": "Crepe", "fr": "Crêpe", "es": "Crepé" } }
       ]
     },
     {
