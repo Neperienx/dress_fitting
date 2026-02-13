@@ -44,6 +44,19 @@ Default photo behavior:
 - For backward compatibility, it can still fall back to the previous `images/default-dress.*` location.
 - You can customize the default by replacing one of those files (same base name) or by updating `DEFAULT_DRESS_PHOTO_PATH` in `landing_server.py`.
 
+### Changing the tagging of default dresses
+Default session cards infer a category from each default dress filename and the tags configured in `tag-options.json`.
+
+To change how defaults are tagged:
+1. Update `tag-options.json` with the tags/categories you want to support.
+2. Rename files in `images/default/` so each filename includes one of those tag IDs. Example: `ball-gown-satin-01.jpg` or `v-neck-lace-02.png`.
+3. Restart the server and start a new default session. The card category chip is computed from the filename tokens.
+
+Notes:
+- Matching is based on normalized tag IDs (lowercase, punctuation replaced with `-`).
+- If no token in a filename matches a known tag, the app assigns a fallback category.
+- This filename-based tagging affects the default session deck only. Store-uploaded dress photos use explicit metadata tags set in the Stores page.
+
 ## Setup details
 1. Copy env vars:
    ```bash
