@@ -832,3 +832,27 @@ h1 {
 .session-bar-row.dislike .session-bar-fill {
   background: linear-gradient(90deg, #fb7185, #e11d48);
 }
+
+.admin-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.admin-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: #fff;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.admin-card-image {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}

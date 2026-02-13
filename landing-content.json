@@ -36,6 +36,10 @@
     "store-details": [
       "store-details",
       "footer"
+    ],
+    "admin": [
+      "admin",
+      "footer"
     ]
   },
   "blocks": [
@@ -690,6 +694,19 @@
           "photoUploadLabel": "Dress photo",
           "photoUploadButton": "Upload photo",
           "galleryTitle": "Dress photo gallery"
+        }
+      }
+    },
+    {
+      "id": "admin",
+      "type": "admin",
+      "content": {
+        "en": {
+          "eyebrow": "Admin panel",
+          "title": "Default dress tag manager",
+          "subtitle": "Tag dresses in the default folder once so every store session can reuse those labels.",
+          "gridTitle": "Default dress library",
+          "gridSubtitle": "Use this view like a catalog: set tags per dress and save."
         }
       }
     }

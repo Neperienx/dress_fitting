@@ -28,10 +28,13 @@ const swipeCategoryChip = document.querySelector('[data-swipe-category-chip]');
 const swipeImage = document.querySelector('[data-swipe-image]');
 const swipeCaption = document.querySelector('[data-swipe-caption]');
 const swipeProgress = document.querySelector('[data-swipe-progress]');
+const swipeSelectedTags = document.querySelector('[data-swipe-selected-tags]');
 const dislikeButton = document.querySelector('[data-swipe-dislike]');
 const likeButton = document.querySelector('[data-swipe-like]');
 const sessionResults = document.querySelector('[data-session-results]');
 const sessionBars = document.querySelector('[data-session-bars]');
+const adminGrid = document.querySelector('[data-admin-grid]');
+const adminMessage = document.querySelector('[data-admin-message]');
 const sessionKey = 'bridalStudioCurrentUser';
 const usersKey = 'bridalStudioUsers';
 const loginLink = document.querySelector('[data-auth-login-link]');
@@ -226,6 +229,20 @@ const setSessionMessage = (message, type) => {
   }
 };
 
+const setAdminMessage = (message, type) => {
+  if (!adminMessage) {
+    return;
+  }
+  adminMessage.textContent = message;
+  adminMessage.classList.remove('is-error', 'is-success');
+  if (type === 'error') {
+    adminMessage.classList.add('is-error');
+  }
+  if (type === 'success') {
+    adminMessage.classList.add('is-success');
+  }
+};
+
 const normalizeToken = (value) =>
   (value || '')
     .toString()
@@ -282,6 +299,12 @@ const renderSwipeCard = () => {
   swipeCaption.textContent = current.fileName;
   swipeCategoryChip.textContent = current.category;
   swipeProgress.textContent = `Look ${swipeIndex + 1} of ${swipeDeck.length}`;
+  if (swipeSelectedTags) {
+    const tags = Array.isArray(current.tags) ? current.tags : [];
+    swipeSelectedTags.textContent = tags.length
+      ? `Selected tags (debug): ${tags.join(', ')}`
+      : 'Selected tags (debug): none';
+  }
   dislikeButton.disabled = false;
   likeButton.disabled = false;
 };
@@ -388,13 +411,34 @@ const startDefaultSession = async () => {
       return;
     }
 
+    let metadataByPhoto = new Map();
+    try {
+      const metadataResponse = await fetch('/api/default-dress-metadata');
+      if (metadataResponse.ok) {
+        const metadataPayload = await metadataResponse.json();
+        const metadataRows = Array.isArray(metadataPayload.photos) ? metadataPayload.photos : [];
+        metadataByPhoto = new Map(
+          metadataRows.map((row) => [row.photo_path, Array.isArray(row.tags) ? row.tags : []])
+        );
+      }
+    } catch (error) {
+      // Fallback to filename heuristics.
+    }
+
     const tagMap = buildTagToCategoryMap();
     const fallbackCategories = Array.from(new Set(Array.from(tagMap.values())));
-    swipeDeck = photos.map((photoPath) => ({
-      photoPath,
-      fileName: photoPath.split('/').pop() || photoPath,
-      category: resolvePhotoCategory(photoPath, tagMap, fallbackCategories),
-    }));
+    swipeDeck = photos.map((photoPath) => {
+      const tags = metadataByPhoto.get(photoPath) || [];
+      const categoryFromTag = tags
+        .map((tag) => tagMap.get(normalizeToken(tag)))
+        .find((value) => Boolean(value));
+      return {
+        photoPath,
+        fileName: photoPath.split('/').pop() || photoPath,
+        tags,
+        category: categoryFromTag || resolvePhotoCategory(photoPath, tagMap, fallbackCategories),
+      };
+    });
     swipeIndex = 0;
     swipeLikes = [];
     swipeDislikes = [];
@@ -1199,6 +1243,117 @@ if (storeForm && storeGrid) {
   loadStores();
 }
 
+const renderAdminTagOptions = (container, selectedTags = []) => {
+  if (!container) {
+    return;
+  }
+  container.innerHTML = '';
+  const options = tagOptions;
+  const locale = getActiveLocale();
+  if (!options || !Array.isArray(options.categories)) {
+    container.textContent = 'Tag options unavailable.';
+    return;
+  }
+  options.categories.forEach((category) => {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'dress-tag-category';
+    const legend = document.createElement('legend');
+    legend.textContent = getLocalizedValue(category.label, locale, options.defaultLocale || 'en') || category.id;
+    fieldset.appendChild(legend);
+    const group = document.createElement('div');
+    group.className = 'dress-tag-group';
+    (category.tags || []).forEach((tag) => {
+      const label = document.createElement('label');
+      label.className = 'dress-tag-option';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = tag.id;
+      checkbox.checked = selectedTags.includes(tag.id);
+      const text = document.createElement('span');
+      text.textContent = getLocalizedValue(tag.label, locale, options.defaultLocale || 'en') || tag.id;
+      label.appendChild(checkbox);
+      label.appendChild(text);
+      group.appendChild(label);
+    });
+    fieldset.appendChild(group);
+    container.appendChild(fieldset);
+  });
+};
+
+const loadAdminPage = async () => {
+  if (!adminGrid) {
+    return;
+  }
+  await loadTagOptions();
+  setAdminMessage('Loading default dresses...', '');
+  try {
+    const response = await fetch('/api/default-dress-metadata');
+    if (!response.ok) {
+      setAdminMessage('Unable to load default dresses.', 'error');
+      return;
+    }
+    const data = await response.json();
+    const photos = Array.isArray(data.photos) ? data.photos : [];
+    adminGrid.innerHTML = '';
+
+    photos.forEach((photo) => {
+      const card = document.createElement('article');
+      card.className = 'admin-card';
+
+      const image = document.createElement('img');
+      image.className = 'admin-card-image';
+      image.src = photo.photo_path;
+      image.alt = photo.photo_path;
+
+      const title = document.createElement('p');
+      title.className = 'store-detail-meta';
+      title.textContent = photo.photo_path.split('/').pop() || photo.photo_path;
+
+      const tagWrap = document.createElement('div');
+      renderAdminTagOptions(tagWrap, Array.isArray(photo.tags) ? photo.tags : []);
+
+      const saveButton = document.createElement('button');
+      saveButton.type = 'button';
+      saveButton.className = 'button secondary';
+      saveButton.textContent = 'Save tags';
+      saveButton.addEventListener('click', async () => {
+        const selectedTags = Array.from(tagWrap.querySelectorAll('input[type="checkbox"]:checked')).map((input) => input.value);
+        saveButton.disabled = true;
+        try {
+          const saveResponse = await fetch('/api/default-dress-metadata', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photo_path: photo.photo_path, tags: selectedTags }),
+          });
+          if (!saveResponse.ok) {
+            setAdminMessage('Failed to save tags for one or more dresses.', 'error');
+            return;
+          }
+          setAdminMessage('Tags saved.', 'success');
+        } catch (error) {
+          setAdminMessage('Failed to save tags for one or more dresses.', 'error');
+        } finally {
+          saveButton.disabled = false;
+        }
+      });
+
+      card.appendChild(image);
+      card.appendChild(title);
+      card.appendChild(tagWrap);
+      card.appendChild(saveButton);
+      adminGrid.appendChild(card);
+    });
+
+    if (!photos.length) {
+      setAdminMessage('No default dresses found.', 'error');
+      return;
+    }
+    setAdminMessage('Loaded default dress library.', 'success');
+  } catch (error) {
+    setAdminMessage('Unable to load default dresses.', 'error');
+  }
+};
+
 if (startSessionButton) {
   startSessionButton.addEventListener('click', startDefaultSession);
 }
@@ -1226,6 +1381,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 loadStoreDetailsPage();
+loadAdminPage();
 
 if (detailsPreviewImage) {
   detailsPreviewImage.addEventListener('click', () => {
