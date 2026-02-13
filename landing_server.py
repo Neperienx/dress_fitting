@@ -22,7 +22,17 @@ DB_PATH = BASE_DIR / "stores.db"
 DEFAULT_DRESS_PHOTO_PATH = "images/default/default-dress.svg"
 STORE_DRESS_PHOTO_BASE_DIR = BASE_DIR / "images" / "stores"
 ALLOWED_DRESS_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
-DEFAULT_SESSION_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
+DEFAULT_SESSION_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".svg",
+    ".avif",
+    ".gif",
+    ".bmp",
+    ".jfif",
+}
 
 
 def init_db() -> None:
@@ -154,7 +164,7 @@ def list_default_dress_photos() -> list[str]:
 
     photos = [
         str(path.relative_to(BASE_DIR)).replace("\\", "/")
-        for path in sorted(default_dir.iterdir())
+        for path in sorted(default_dir.rglob("*"))
         if path.is_file() and path.suffix.lower() in DEFAULT_SESSION_EXTENSIONS
     ]
     return photos or [get_default_dress_photo_path()]
