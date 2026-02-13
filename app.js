@@ -400,29 +400,38 @@ const renderSessionResults = () => {
     const categoryInsights = buildSessionTagInsights();
     const strongest = Math.max(
       1,
-      ...categoryInsights.flatMap((category) => category.tags.flatMap((tag) => [tag.likeCount, tag.dislikeCount]))
+      ...categoryInsights.flatMap((category) =>
+        category.tags.map((tag) => Math.abs((tag.likeCount || 0) - (tag.dislikeCount || 0)))
+      )
     );
 
-    const addSentimentBar = (sentimentRow, sentiment, count) => {
-      const sentimentLabel = document.createElement('span');
-      sentimentLabel.className = 'session-bar-sentiment';
-      sentimentLabel.textContent = sentiment === 'like' ? 'Like' : 'Dislike';
+    const addScoreBar = (scoreRow, score) => {
+      const scoreLabel = document.createElement('span');
+      scoreLabel.className = 'session-bar-score-label';
+      if (score > 0) {
+        scoreLabel.textContent = 'Liked';
+      } else if (score < 0) {
+        scoreLabel.textContent = 'Disliked';
+      } else {
+        scoreLabel.textContent = 'Neutral';
+      }
 
       const track = document.createElement('div');
       track.className = 'session-bar-track';
 
       const fill = document.createElement('div');
-      fill.className = `session-bar-fill ${sentiment}`;
-      fill.style.width = count ? `${(count / strongest) * 100}%` : '0%';
+      const sentimentClass = score >= 0 ? 'like' : 'dislike';
+      fill.className = `session-bar-fill ${sentimentClass}`;
+      fill.style.width = score ? `${(Math.abs(score) / strongest) * 100}%` : '0%';
       track.appendChild(fill);
 
       const countText = document.createElement('span');
       countText.className = 'session-bar-count';
-      countText.textContent = `${count}`;
+      countText.textContent = score > 0 ? `+${score}` : `${score}`;
 
-      sentimentRow.appendChild(sentimentLabel);
-      sentimentRow.appendChild(track);
-      sentimentRow.appendChild(countText);
+      scoreRow.appendChild(scoreLabel);
+      scoreRow.appendChild(track);
+      scoreRow.appendChild(countText);
     };
 
     categoryInsights.forEach((category) => {
@@ -435,24 +444,20 @@ const renderSessionResults = () => {
       categorySection.appendChild(title);
 
       category.tags.forEach((tag) => {
+        const score = (tag.likeCount || 0) - (tag.dislikeCount || 0);
         const tagRow = document.createElement('div');
         tagRow.className = 'session-tag-row';
 
         const label = document.createElement('div');
         label.className = 'session-bar-label';
-        label.textContent = tag.label;
+        label.textContent = `${tag.label} (${tag.likeCount} likes • ${tag.dislikeCount} dislikes)`;
 
-        const likeRow = document.createElement('div');
-        likeRow.className = 'session-bar-row';
-        addSentimentBar(likeRow, 'like', tag.likeCount);
-
-        const dislikeRow = document.createElement('div');
-        dislikeRow.className = 'session-bar-row';
-        addSentimentBar(dislikeRow, 'dislike', tag.dislikeCount);
+        const scoreRow = document.createElement('div');
+        scoreRow.className = 'session-bar-row';
+        addScoreBar(scoreRow, score);
 
         tagRow.appendChild(label);
-        tagRow.appendChild(likeRow);
-        tagRow.appendChild(dislikeRow);
+        tagRow.appendChild(scoreRow);
         categorySection.appendChild(tagRow);
       });
 
