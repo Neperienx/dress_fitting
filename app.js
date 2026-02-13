@@ -37,6 +37,7 @@ const adminGrid = document.querySelector('[data-admin-grid]');
 const adminMessage = document.querySelector('[data-admin-message]');
 const sessionKey = 'bridalStudioCurrentUser';
 const usersKey = 'bridalStudioUsers';
+const legacyUsersKeys = ['bridalStudioAuthUsers', 'bridalStudioAccounts'];
 const loginLink = document.querySelector('[data-auth-login-link]');
 const userMenu = document.querySelector('[data-user-menu]');
 const userMenuTrigger = document.querySelector('[data-user-menu-trigger]');
@@ -928,15 +929,46 @@ if (authCard) {
   };
 
   const readUsers = () => {
+    const parseStoredUsers = (key) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) {
+          return {};
+        }
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    };
+
     try {
-      return JSON.parse(localStorage.getItem(usersKey)) || {};
+      const users = parseStoredUsers(usersKey);
+      if (Object.keys(users).length > 0) {
+        return users;
+      }
+
+      for (const key of legacyUsersKeys) {
+        const legacyUsers = parseStoredUsers(key);
+        if (Object.keys(legacyUsers).length > 0) {
+          localStorage.setItem(usersKey, JSON.stringify(legacyUsers));
+          return legacyUsers;
+        }
+      }
+
+      return {};
     } catch (error) {
       return {};
     }
   };
 
   const writeUsers = (users) => {
-    localStorage.setItem(usersKey, JSON.stringify(users));
+    try {
+      localStorage.setItem(usersKey, JSON.stringify(users));
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
   const setMessage = (panel, message, type) => {
@@ -996,7 +1028,11 @@ if (authCard) {
       }
       const users = readUsers();
       if (!users[username]) {
-        setMessage(panels.login, 'No account found. Create one to get started.', 'error');
+        setMessage(
+          panels.login,
+          'No account found. Make sure you are on the same browser and URL where you signed up, or create a new account.',
+          'error'
+        );
         return;
       }
       if (users[username] !== password) {
@@ -1024,7 +1060,15 @@ if (authCard) {
         return;
       }
       users[username] = password;
-      writeUsers(users);
+      const didPersist = writeUsers(users);
+      if (!didPersist) {
+        setMessage(
+          panels.signup,
+          'We could not save your account in local storage. Check browser privacy settings and try again.',
+          'error'
+        );
+        return;
+      }
       setMessage(panels.signup, 'Account created! You can log in now.', 'success');
       loginForm.username.value = username;
       loginForm.password.value = '';
