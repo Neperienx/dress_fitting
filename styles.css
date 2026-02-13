@@ -829,7 +829,7 @@ h1 {
   color: var(--muted);
 }
 
-.session-bar-sentiment {
+.session-bar-score-label {
   font-size: 0.78rem;
   color: var(--muted);
 }
