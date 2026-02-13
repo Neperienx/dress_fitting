@@ -968,8 +968,32 @@ def render_store_details(copy: dict) -> str:
           </div>
           <div class="session-results is-hidden" data-session-results>
             <h4>Session Insights</h4>
-            <p class="store-detail-location">Tag-level likes and dislikes, grouped by category.</p>
-            <div class="session-bars" data-session-bars></div>
+            <p class="store-detail-location">Review preference signals and ranked in-stock matches for this bride.</p>
+            <div class="session-results-tabs" role="tablist" aria-label="Session result tabs">
+              <button class="session-results-tab is-active" type="button" role="tab" aria-selected="true" data-session-results-tab="insights">
+                Tag insights
+              </button>
+              <button class="session-results-tab" type="button" role="tab" aria-selected="false" data-session-results-tab="ranking">
+                Dress ranking
+              </button>
+            </div>
+            <div class="session-results-panel" data-session-results-panel="insights">
+              <div class="session-bars" data-session-bars></div>
+            </div>
+            <div class="session-results-panel is-hidden" data-session-results-panel="ranking">
+              <div class="session-ranking" data-session-ranking>
+                <div class="session-ranking-viewer">
+                  <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+                </div>
+                <div class="session-ranking-actions">
+                  <button class="button secondary" type="button" data-session-ranking-prev>←</button>
+                  <button class="button secondary" type="button" data-session-ranking-next>→</button>
+                </div>
+                <p class="store-detail-meta" data-session-ranking-position></p>
+                <p class="store-detail-location" data-session-ranking-caption></p>
+                <p class="store-detail-location" data-session-ranking-score></p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

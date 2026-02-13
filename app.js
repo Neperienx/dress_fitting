@@ -33,6 +33,14 @@ const dislikeButton = document.querySelector('[data-swipe-dislike]');
 const likeButton = document.querySelector('[data-swipe-like]');
 const sessionResults = document.querySelector('[data-session-results]');
 const sessionBars = document.querySelector('[data-session-bars]');
+const sessionResultTabs = Array.from(document.querySelectorAll('[data-session-results-tab]'));
+const sessionResultPanels = Array.from(document.querySelectorAll('[data-session-results-panel]'));
+const sessionRankingImage = document.querySelector('[data-session-ranking-image]');
+const sessionRankingCaption = document.querySelector('[data-session-ranking-caption]');
+const sessionRankingScore = document.querySelector('[data-session-ranking-score]');
+const sessionRankingPosition = document.querySelector('[data-session-ranking-position]');
+const sessionRankingPrev = document.querySelector('[data-session-ranking-prev]');
+const sessionRankingNext = document.querySelector('[data-session-ranking-next]');
 const adminGrid = document.querySelector('[data-admin-grid]');
 const adminMessage = document.querySelector('[data-admin-message]');
 const sessionKey = 'bridalStudioCurrentUser';
@@ -58,6 +66,8 @@ let swipeDeck = [];
 let swipeIndex = 0;
 let swipeLikes = [];
 let swipeDislikes = [];
+let rankedStoreDresses = [];
+let rankedStoreDressIndex = 0;
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
@@ -385,6 +395,81 @@ const buildSessionTagInsights = () => {
   return categorySummaries;
 };
 
+const buildSwipePreferenceScores = () => {
+  const scores = new Map();
+  const updateScores = (items, delta) => {
+    items.forEach((item) => {
+      const uniqueTags = new Set((Array.isArray(item.tags) ? item.tags : []).map((tag) => normalizeToken(tag)).filter(Boolean));
+      uniqueTags.forEach((tagId) => {
+        scores.set(tagId, (scores.get(tagId) || 0) + delta);
+      });
+    });
+  };
+
+  updateScores(swipeLikes, 1);
+  updateScores(swipeDislikes, -1);
+  return scores;
+};
+
+const rankStoreDressesFromSession = () => {
+  const preferenceScores = buildSwipePreferenceScores();
+  const safePhotos = Array.isArray(currentDressPhotos) ? currentDressPhotos : [];
+  return safePhotos
+    .map((photo) => {
+      const normalizedTags = Array.isArray(photo.tags)
+        ? photo.tags.map((tag) => normalizeToken(tag)).filter(Boolean)
+        : [];
+      const score = normalizedTags.reduce((total, tagId) => total + (preferenceScores.get(tagId) || 0), 0);
+      return {
+        ...photo,
+        score,
+        normalizedTags,
+      };
+    })
+    .sort((first, second) => {
+      if (second.score !== first.score) {
+        return second.score - first.score;
+      }
+      return (first.photo_path || '').localeCompare(second.photo_path || '');
+    });
+};
+
+const setSessionResultsTab = (tabId) => {
+  sessionResultTabs.forEach((tab) => {
+    const isActive = tab.dataset.sessionResultsTab === tabId;
+    tab.classList.toggle('is-active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  sessionResultPanels.forEach((panel) => {
+    panel.classList.toggle('is-hidden', panel.dataset.sessionResultsPanel !== tabId);
+  });
+};
+
+const renderRankedStoreDress = () => {
+  if (!sessionRankingImage || !sessionRankingCaption || !sessionRankingScore || !sessionRankingPosition || !sessionRankingPrev || !sessionRankingNext) {
+    return;
+  }
+
+  if (!rankedStoreDresses.length) {
+    sessionRankingImage.removeAttribute('src');
+    sessionRankingCaption.textContent = 'No in-stock dresses to rank yet.';
+    sessionRankingScore.textContent = 'Add dresses with metadata tags to this store to get matching recommendations.';
+    sessionRankingPosition.textContent = '';
+    sessionRankingPrev.disabled = true;
+    sessionRankingNext.disabled = true;
+    return;
+  }
+
+  const current = rankedStoreDresses[rankedStoreDressIndex];
+  const tagText = current.normalizedTags.length ? current.normalizedTags.join(', ') : 'none';
+  sessionRankingImage.src = current.photo_path;
+  sessionRankingCaption.textContent = `Top match tags: ${tagText}`;
+  sessionRankingScore.textContent = `Match score: ${current.score > 0 ? `+${current.score}` : current.score}`;
+  sessionRankingPosition.textContent = `Dress ${rankedStoreDressIndex + 1} of ${rankedStoreDresses.length}`;
+  sessionRankingPrev.disabled = rankedStoreDressIndex === 0;
+  sessionRankingNext.disabled = rankedStoreDressIndex >= rankedStoreDresses.length - 1;
+};
+
 const renderSessionResults = () => {
   if (!sessionResults || !sessionBars) {
     return;
@@ -464,6 +549,11 @@ const renderSessionResults = () => {
       sessionBars.appendChild(categorySection);
     });
   }
+
+  rankedStoreDresses = rankStoreDressesFromSession();
+  rankedStoreDressIndex = 0;
+  renderRankedStoreDress();
+  setSessionResultsTab('insights');
 
   sessionResults.classList.remove('is-hidden');
   setSessionMessage('Session complete! Here is what your client loved most.', 'success');
@@ -545,6 +635,8 @@ const startDefaultSession = async () => {
     swipeIndex = 0;
     swipeLikes = [];
     swipeDislikes = [];
+    rankedStoreDresses = [];
+    rankedStoreDressIndex = 0;
 
     if (swipeWorkspace) {
       swipeWorkspace.classList.remove('is-hidden');
@@ -552,6 +644,7 @@ const startDefaultSession = async () => {
     if (sessionResults) {
       sessionResults.classList.add('is-hidden');
     }
+    setSessionResultsTab('insights');
     renderSwipeCard();
     setSessionMessage('Swipe right for like and left for dislike. You can also use arrow keys.', '');
   } catch (error) {
@@ -1510,6 +1603,37 @@ if (dislikeButton) {
 
 if (likeButton) {
   likeButton.addEventListener('click', () => handleSwipe('like'));
+}
+
+if (sessionResultTabs.length) {
+  sessionResultTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const tabId = tab.dataset.sessionResultsTab;
+      if (tabId) {
+        setSessionResultsTab(tabId);
+      }
+    });
+  });
+}
+
+if (sessionRankingPrev) {
+  sessionRankingPrev.addEventListener('click', () => {
+    if (rankedStoreDressIndex <= 0) {
+      return;
+    }
+    rankedStoreDressIndex -= 1;
+    renderRankedStoreDress();
+  });
+}
+
+if (sessionRankingNext) {
+  sessionRankingNext.addEventListener('click', () => {
+    if (rankedStoreDressIndex >= rankedStoreDresses.length - 1) {
+      return;
+    }
+    rankedStoreDressIndex += 1;
+    renderRankedStoreDress();
+  });
 }
 
 document.addEventListener('keydown', (event) => {
