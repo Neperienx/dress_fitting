@@ -106,6 +106,16 @@ def init_db() -> None:
             conn.execute("ALTER TABLE store_dress_photos ADD COLUMN price REAL")
         if "tags_json" not in photo_column_names:
             conn.execute("ALTER TABLE store_dress_photos ADD COLUMN tags_json TEXT")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS default_dress_metadata (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              photo_path TEXT NOT NULL UNIQUE,
+              tags_json TEXT,
+              updated_at TEXT NOT NULL
+            )
+            """
+        )
 
 
 def generate_invite_code() -> str:
@@ -148,6 +158,45 @@ def list_default_dress_photos() -> list[str]:
         if path.is_file() and path.suffix.lower() in DEFAULT_SESSION_EXTENSIONS
     ]
     return photos or [get_default_dress_photo_path()]
+
+
+def fetch_default_dress_metadata() -> list[dict]:
+    photos = list_default_dress_photos()
+    if not photos:
+        return []
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            """
+            SELECT photo_path, tags_json
+            FROM default_dress_metadata
+            WHERE photo_path IN ({placeholders})
+            """.format(placeholders=",".join("?" for _ in photos)),
+            photos,
+        ).fetchall()
+    tags_by_photo = {row[0]: parse_tags(row[1]) for row in rows}
+    return [{"photo_path": photo, "tags": tags_by_photo.get(photo, [])} for photo in photos]
+
+
+def update_default_dress_metadata(photo_path: str, tags: list[str]) -> bool:
+    normalized_path = (photo_path or "").strip()
+    if not normalized_path:
+        return False
+    available_photos = set(list_default_dress_photos())
+    if normalized_path not in available_photos:
+        return False
+    updated_at = datetime.now(timezone.utc).isoformat()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            INSERT INTO default_dress_metadata (photo_path, tags_json, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(photo_path) DO UPDATE SET
+              tags_json = excluded.tags_json,
+              updated_at = excluded.updated_at
+            """,
+            (normalized_path, json.dumps(tags), updated_at),
+        )
+    return True
 
 
 def normalize_store_payload(store: dict) -> dict:
@@ -905,12 +954,33 @@ def render_store_details(copy: dict) -> str:
               </button>
             </div>
             <p class="store-detail-meta" data-swipe-progress></p>
+            <p class="store-detail-meta" data-swipe-selected-tags></p>
           </div>
           <div class="session-results is-hidden" data-session-results>
             <h4>Session Insights</h4>
             <p class="store-detail-location">Categories your client loved and passed on the most.</p>
             <div class="session-bars" data-session-bars></div>
           </div>
+        </div>
+      </div>
+    """
+
+
+def render_admin(copy: dict) -> str:
+    return f"""
+      <div class="container store-details-page">
+        <div class="dashboard-header">
+          <div>
+            <p class="eyebrow">{escape(copy.get("eyebrow") or "Admin")}</p>
+            <h2>{escape(copy.get("title") or "Default dress tag manager")}</h2>
+            <p class="lead">{escape(copy.get("subtitle") or "Tag every default dress once and reuse labels in every session.")}</p>
+          </div>
+        </div>
+        <div class="dashboard-panel">
+          <h3>{escape(copy.get("gridTitle") or "Default dress library")}</h3>
+          <p class="store-detail-location">{escape(copy.get("gridSubtitle") or "Changes are shared across all stores.")}</p>
+          <p class="auth-message form-message" data-admin-message role="status" aria-live="polite"></p>
+          <div class="admin-grid" data-admin-grid></div>
         </div>
       </div>
     """
@@ -940,6 +1010,7 @@ RENDERERS = {
     "login": render_login,
     "dashboard": render_dashboard,
     "storeDetails": render_store_details,
+    "admin": render_admin,
     "footer": render_footer,
 }
 
@@ -976,6 +1047,7 @@ def render_page(locale: str, page_id: str) -> str:
         "login": "Log in — Bridal Studio Sessions",
         "stores": "Stores — Bridal Studio Sessions",
         "store-details": "Store Details — Bridal Studio Sessions",
+        "admin": "Admin — Bridal Studio Sessions",
     }
     page_title = page_titles.get(page_id, page_titles["landing"])
     template_text = TEMPLATE_PATH.read_text(encoding="utf-8")
@@ -1163,6 +1235,47 @@ class LandingHandler(SimpleHTTPRequestHandler):
 
     def do_PUT(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/default-dress-metadata":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = 0
+            payload = self.rfile.read(length).decode("utf-8") if length else ""
+            try:
+                data = json.loads(payload) if payload else {}
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Invalid JSON payload."}).encode("utf-8"))
+                return
+
+            photo_path = (data.get("photo_path") or "").strip()
+            raw_tags = data.get("tags")
+            if raw_tags is None:
+                raw_tags = []
+            if not isinstance(raw_tags, list):
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "tags must be an array."}).encode("utf-8"))
+                return
+            tags = [str(tag).strip() for tag in raw_tags if str(tag).strip()]
+
+            updated = update_default_dress_metadata(photo_path, tags)
+            if not updated:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Default photo not found."}).encode("utf-8"))
+                return
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"photos": fetch_default_dress_metadata()}).encode("utf-8"))
+            return
+
         metadata_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo-metadata", parsed.path)
         if not metadata_match:
             self.send_response(404)
@@ -1328,6 +1441,12 @@ class LandingHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"photos": list_default_dress_photos()}).encode("utf-8"))
             return
+        if parsed.path == "/api/default-dress-metadata":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"photos": fetch_default_dress_metadata()}).encode("utf-8"))
+            return
         if parsed.path == "/api/tag-options":
             try:
                 options = load_tag_options()
@@ -1383,6 +1502,15 @@ class LandingHandler(SimpleHTTPRequestHandler):
             query = parse_qs(parsed.query)
             locale = query.get("lang", [""])[0]
             page = render_page(locale, "stores")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(page.encode("utf-8"))
+            return
+        if parsed.path in {"/admin", "/admin/"}:
+            query = parse_qs(parsed.query)
+            locale = query.get("lang", [""])[0]
+            page = render_page(locale, "admin")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
