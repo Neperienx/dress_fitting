@@ -968,7 +968,7 @@ def render_store_details(copy: dict) -> str:
           </div>
           <div class="session-results is-hidden" data-session-results>
             <h4>Session Insights</h4>
-            <p class="store-detail-location">Categories your client loved and passed on the most.</p>
+            <p class="store-detail-location">Tag-level likes and dislikes, grouped by category.</p>
             <div class="session-bars" data-session-bars></div>
           </div>
         </div>

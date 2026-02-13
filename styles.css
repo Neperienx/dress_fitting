@@ -793,12 +793,34 @@ h1 {
 
 .session-bars {
   display: grid;
+  gap: 1rem;
+}
+
+.session-tag-category {
+  display: grid;
   gap: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.session-tag-category-title {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.session-tag-row {
+  display: grid;
+  gap: 0.35rem;
 }
 
 .session-bar-row {
   display: grid;
-  gap: 0.4rem;
+  grid-template-columns: 62px 1fr 26px;
+  gap: 0.45rem;
+  align-items: center;
 }
 
 .session-bar-label {
@@ -807,30 +829,36 @@ h1 {
   color: var(--muted);
 }
 
+.session-bar-sentiment {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 .session-bar-track {
+  min-height: 0.7rem;
   background: #f0e8ef;
   border-radius: 999px;
   overflow: hidden;
 }
 
 .session-bar-fill {
-  min-height: 1.6rem;
+  min-height: 0.7rem;
   border-radius: 999px;
-  color: #fff;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  font-size: 0.82rem;
-  font-weight: 700;
-  padding: 0 0.55rem;
 }
 
-.session-bar-row.like .session-bar-fill {
+.session-bar-fill.like {
   background: linear-gradient(90deg, #34d399, #10b981);
 }
 
-.session-bar-row.dislike .session-bar-fill {
+.session-bar-fill.dislike {
   background: linear-gradient(90deg, #fb7185, #e11d48);
+}
+
+.session-bar-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
 }
 
 .admin-grid {

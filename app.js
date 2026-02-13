@@ -310,15 +310,79 @@ const renderSwipeCard = () => {
   likeButton.disabled = false;
 };
 
-const tallyCategories = (items) => {
-  const counts = new Map();
-  items.forEach((item) => {
-    const label = item.category || 'General Style';
-    counts.set(label, (counts.get(label) || 0) + 1);
+const buildSessionTagInsights = () => {
+  const locale = getActiveLocale();
+  const defaultLocale = tagOptions?.defaultLocale || 'en';
+  const categories = Array.isArray(tagOptions?.categories) ? tagOptions.categories : [];
+  const fallbackCategoryLabel = 'Additional Tags';
+
+  const categorySummaries = categories.map((category) => {
+    const categoryLabel = getLocalizedValue(category.label, locale, defaultLocale) || category.id;
+    const tags = (category.tags || []).map((tag) => ({
+      id: tag.id,
+      normalizedId: normalizeToken(tag.id),
+      label: getLocalizedValue(tag.label, locale, defaultLocale) || tag.id,
+      likeCount: 0,
+      dislikeCount: 0,
+    }));
+    return {
+      id: category.id,
+      label: categoryLabel,
+      tags,
+    };
   });
-  return Array.from(counts.entries())
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => b.count - a.count);
+
+  const tagLookup = new Map();
+  categorySummaries.forEach((category) => {
+    category.tags.forEach((tag) => {
+      tagLookup.set(tag.normalizedId, tag);
+    });
+  });
+
+  const additionalTags = new Map();
+  const tallySentimentForItem = (item, sentiment) => {
+    const uniqueTags = new Set((Array.isArray(item.tags) ? item.tags : []).map((tag) => normalizeToken(tag)).filter(Boolean));
+    uniqueTags.forEach((tagId) => {
+      const knownTag = tagLookup.get(tagId);
+      if (knownTag) {
+        if (sentiment === 'like') {
+          knownTag.likeCount += 1;
+        } else {
+          knownTag.dislikeCount += 1;
+        }
+        return;
+      }
+
+      if (!additionalTags.has(tagId)) {
+        additionalTags.set(tagId, {
+          id: tagId,
+          normalizedId: tagId,
+          label: tagId,
+          likeCount: 0,
+          dislikeCount: 0,
+        });
+      }
+      const additionalTag = additionalTags.get(tagId);
+      if (sentiment === 'like') {
+        additionalTag.likeCount += 1;
+      } else {
+        additionalTag.dislikeCount += 1;
+      }
+    });
+  };
+
+  swipeLikes.forEach((item) => tallySentimentForItem(item, 'like'));
+  swipeDislikes.forEach((item) => tallySentimentForItem(item, 'dislike'));
+
+  if (additionalTags.size) {
+    categorySummaries.push({
+      id: 'additional-tags',
+      label: fallbackCategoryLabel,
+      tags: Array.from(additionalTags.values()).sort((a, b) => a.label.localeCompare(b.label)),
+    });
+  }
+
+  return categorySummaries;
 };
 
 const renderSessionResults = () => {
@@ -327,40 +391,73 @@ const renderSessionResults = () => {
   }
   sessionBars.innerHTML = '';
 
-  const liked = tallyCategories(swipeLikes).slice(0, 4);
-  const disliked = tallyCategories(swipeDislikes).slice(0, 4);
-  const strongest = Math.max(1, ...liked.map((entry) => entry.count), ...disliked.map((entry) => entry.count));
-
-  const addBar = (entry, sentiment) => {
-    const row = document.createElement('div');
-    row.className = `session-bar-row ${sentiment}`;
-
-    const label = document.createElement('div');
-    label.className = 'session-bar-label';
-    label.textContent = `${sentiment === 'like' ? 'Liked' : 'Disliked'} • ${entry.category}`;
-
-    const track = document.createElement('div');
-    track.className = 'session-bar-track';
-
-    const fill = document.createElement('div');
-    fill.className = 'session-bar-fill';
-    fill.style.width = `${Math.max(10, (entry.count / strongest) * 100)}%`;
-    fill.textContent = `${entry.count}`;
-
-    track.appendChild(fill);
-    row.appendChild(label);
-    row.appendChild(track);
-    sessionBars.appendChild(row);
-  };
-
-  if (!liked.length && !disliked.length) {
+  if (!swipeLikes.length && !swipeDislikes.length) {
     const empty = document.createElement('p');
     empty.className = 'store-detail-location';
     empty.textContent = 'No swipes recorded yet.';
     sessionBars.appendChild(empty);
   } else {
-    liked.forEach((entry) => addBar(entry, 'like'));
-    disliked.forEach((entry) => addBar(entry, 'dislike'));
+    const categoryInsights = buildSessionTagInsights();
+    const strongest = Math.max(
+      1,
+      ...categoryInsights.flatMap((category) => category.tags.flatMap((tag) => [tag.likeCount, tag.dislikeCount]))
+    );
+
+    const addSentimentBar = (sentimentRow, sentiment, count) => {
+      const sentimentLabel = document.createElement('span');
+      sentimentLabel.className = 'session-bar-sentiment';
+      sentimentLabel.textContent = sentiment === 'like' ? 'Like' : 'Dislike';
+
+      const track = document.createElement('div');
+      track.className = 'session-bar-track';
+
+      const fill = document.createElement('div');
+      fill.className = `session-bar-fill ${sentiment}`;
+      fill.style.width = count ? `${(count / strongest) * 100}%` : '0%';
+      track.appendChild(fill);
+
+      const countText = document.createElement('span');
+      countText.className = 'session-bar-count';
+      countText.textContent = `${count}`;
+
+      sentimentRow.appendChild(sentimentLabel);
+      sentimentRow.appendChild(track);
+      sentimentRow.appendChild(countText);
+    };
+
+    categoryInsights.forEach((category) => {
+      const categorySection = document.createElement('section');
+      categorySection.className = 'session-tag-category';
+
+      const title = document.createElement('h5');
+      title.className = 'session-tag-category-title';
+      title.textContent = category.label;
+      categorySection.appendChild(title);
+
+      category.tags.forEach((tag) => {
+        const tagRow = document.createElement('div');
+        tagRow.className = 'session-tag-row';
+
+        const label = document.createElement('div');
+        label.className = 'session-bar-label';
+        label.textContent = tag.label;
+
+        const likeRow = document.createElement('div');
+        likeRow.className = 'session-bar-row';
+        addSentimentBar(likeRow, 'like', tag.likeCount);
+
+        const dislikeRow = document.createElement('div');
+        dislikeRow.className = 'session-bar-row';
+        addSentimentBar(dislikeRow, 'dislike', tag.dislikeCount);
+
+        tagRow.appendChild(label);
+        tagRow.appendChild(likeRow);
+        tagRow.appendChild(dislikeRow);
+        categorySection.appendChild(tagRow);
+      });
+
+      sessionBars.appendChild(categorySection);
+    });
   }
 
   sessionResults.classList.remove('is-hidden');
