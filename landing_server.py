@@ -866,91 +866,131 @@ def render_dashboard(copy: dict) -> str:
 
 def render_store_details(copy: dict) -> str:
     return f"""
-      <div class="container store-details-page">
-        <div class="dashboard-header">
-          <div>
-            <p class="eyebrow">{escape(copy.get("eyebrow") or "Store management")}</p>
-            <h2>{escape(copy.get("title") or "Store details")}</h2>
-            <p class="lead">{escape(copy.get("subtitle") or "Manage your store and dress photos in one place.")}</p>
+      <div class="container store-details-page bridal-shell">
+        <aside class="bridal-sidebar">
+          <div class="bridal-sidebar-brand">
+            <span class="bridal-brand-badge">WL</span>
+            <span>{escape(copy.get("brandName") or "White Lace Bridal")}</span>
           </div>
-        </div>
-        <div class="mobile-app-shell" data-mobile-app-shell>
-          <div class="mobile-app-panel" data-mobile-panel="management">
-            <div class="dashboard-panel store-detail">
-              <p class="store-detail-name" data-store-details-name>
-                {escape(copy.get("empty") or "Select a store from the overview first.")}
-              </p>
-              <p class="store-detail-location" data-store-details-address></p>
-              <p class="store-detail-meta" data-store-details-photo-count></p>
-              <p class="store-detail-meta" data-store-details-owner></p>
-              <p class="store-detail-meta" data-store-details-invite></p>
-              <p class="store-detail-meta" data-store-details-created></p>
-            </div>
+          <nav class="bridal-sidebar-nav">
+            <a class="bridal-nav-item is-active" href="#">Dashboard</a>
+            <button class="bridal-nav-item" type="button" data-mobile-tab="session">Start Session</button>
+            <a class="bridal-nav-item" href="#">Inventory</a>
+            <a class="bridal-nav-item" href="#">Studio Settings</a>
+            <a class="bridal-nav-item" href="#">Team &amp; Store</a>
+          </nav>
+        </aside>
 
-            <div class="dashboard-panel dress-preview-panel">
-              <h3>{escape(copy.get("previewTitle") or "Dress preview")}</h3>
-              <img class="dress-preview-image is-hidden" data-dress-preview-image alt="Detailed dress preview" />
+        <div class="bridal-main">
+          <header class="bridal-topbar">
+            <div>
+              <p class="eyebrow">{escape(copy.get("eyebrow") or "Store management")}</p>
+              <h2>{escape(copy.get("title") or "Welcome back, Anna")}</h2>
             </div>
-
-            <div class="dashboard-panel">
-              <h3>{escape(copy.get("photoTitle") or "Upload bridal dress photos")}</h3>
-              <form class="store-form" data-dress-photo-form>
-                <label>
-                  {escape(copy.get("photoUploadLabel") or "Dress photo")}
-                  <input
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.webp"
-                    data-dress-photo-input
-                  />
-                </label>
-                <button class="button secondary" type="submit" data-dress-photo-submit>
-                  {escape(copy.get("photoUploadButton") or "Upload photo")}
-                </button>
-                <p
-                  class="auth-message form-message"
-                  data-dress-photo-message
-                  role="status"
-                  aria-live="polite"
-                ></p>
-              </form>
+            <div class="bridal-topbar-actions">
+              <span class="bridal-pill">{escape(copy.get("brandName") or "White Lace Bridal")}</span>
+              <span class="bridal-avatar">👰</span>
             </div>
+          </header>
 
-            <div class="dashboard-panel">
-              <h3>{escape(copy.get("galleryTitle") or "Dress photo gallery")}</h3>
-              <div class="dress-photo-grid" data-dress-miniatures></div>
-            </div>
-
-            <div class="dashboard-panel">
-              <h3>{escape(copy.get("metadataTitle") or "Dress metadata")}</h3>
-              <form class="store-form" data-dress-metadata-form>
-                <label>
-                  {escape(copy.get("metadataPriceLabel") or "Price")}
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="{escape(copy.get('metadataPricePlaceholder') or 'e.g. 1299.00')}"
-                    data-dress-price-input
-                  />
-                </label>
-                <div class="dress-tag-options" data-dress-tag-options></div>
-                <button class="button secondary" type="submit" data-dress-metadata-submit>
-                  {escape(copy.get("metadataSaveButton") or "Save metadata")}
-                </button>
-                <p class="auth-message form-message" data-dress-metadata-message role="status" aria-live="polite"></p>
-              </form>
-            </div>
-          </div>
-
-          <div class="mobile-app-panel is-hidden" data-mobile-panel="session">
-            <div class="dashboard-panel session-panel" data-swipe-session-panel>
-              <div class="session-panel-header">
+          <div class="mobile-app-shell" data-mobile-app-shell>
+            <div class="mobile-app-panel" data-mobile-panel="management">
+              <section class="dashboard-panel bridal-hero-panel">
                 <div>
-                  <h3>{escape(copy.get("sessionTitle") or "Default Session")}</h3>
-                  <p class="lead">{escape(copy.get("sessionSubtitle") or "Start a quick like/dislike swiping session from your default dress folder.")}</p>
+                  <h3>{escape(copy.get("sessionTitle") or "Start a New Bridal Session")}</h3>
+                  <p class="lead">{escape(copy.get("subtitle") or "Guide a bride through your beautiful dresses.")}</p>
+                  <button class="button" type="button" data-start-session-button>Start Session</button>
                 </div>
-                <button class="button" type="button" data-start-session-button>Start a Session</button>
+                <img src="/images/hero.svg" alt="Bridal consultant helping a bride" />
+              </section>
+
+              <div class="bridal-card-row">
+                <div class="dashboard-panel bridal-mini-card">
+                  <h3>{escape(copy.get("galleryTitle") or "Manage Inventory")}</h3>
+                  <p class="store-detail-location" data-store-details-photo-count>248 dresses available</p>
+                </div>
+                <div class="dashboard-panel bridal-mini-card">
+                  <h3>{escape(copy.get("metadataTitle") or "Upload Studio Defaults")}</h3>
+                  <p class="store-detail-location">10 reference photos set</p>
+                </div>
+                <div class="dashboard-panel bridal-mini-card">
+                  <h3>Invite Team Members</h3>
+                  <p class="store-detail-location">5 active stylists</p>
+                </div>
               </div>
+
+              <div class="dashboard-panel store-detail">
+                <h3>{escape(copy.get("detailTitle") or "Store details")}</h3>
+                <p class="store-detail-name" data-store-details-name>
+                  {escape(copy.get("empty") or "Select a store from the overview first.")}
+                </p>
+                <p class="store-detail-location" data-store-details-address></p>
+                <p class="store-detail-meta" data-store-details-owner></p>
+                <p class="store-detail-meta" data-store-details-invite></p>
+                <p class="store-detail-meta" data-store-details-created></p>
+              </div>
+
+              <div class="dashboard-panel dress-preview-panel">
+                <h3>{escape(copy.get("previewTitle") or "Dress preview")}</h3>
+                <img class="dress-preview-image is-hidden" data-dress-preview-image alt="Detailed dress preview" />
+                <div class="dress-photo-grid" data-dress-miniatures></div>
+              </div>
+
+              <div class="dashboard-panel bridal-form-grid">
+                <section>
+                  <h3>{escape(copy.get("photoTitle") or "Upload bridal dress photos")}</h3>
+                  <form class="store-form" data-dress-photo-form>
+                    <label>
+                      {escape(copy.get("photoUploadLabel") or "Dress photo")}
+                      <input
+                        type="file"
+                        accept=".png,.jpg,.jpeg,.webp"
+                        data-dress-photo-input
+                      />
+                    </label>
+                    <button class="button secondary" type="submit" data-dress-photo-submit>
+                      {escape(copy.get("photoUploadButton") or "Upload photo")}
+                    </button>
+                    <p
+                      class="auth-message form-message"
+                      data-dress-photo-message
+                      role="status"
+                      aria-live="polite"
+                    ></p>
+                  </form>
+                </section>
+
+                <section>
+                  <h3>{escape(copy.get("metadataTitle") or "Dress metadata")}</h3>
+                  <form class="store-form" data-dress-metadata-form>
+                    <label>
+                      {escape(copy.get("metadataPriceLabel") or "Price")}
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="{escape(copy.get('metadataPricePlaceholder') or 'e.g. 1299.00')}"
+                        data-dress-price-input
+                      />
+                    </label>
+                    <div class="dress-tag-options" data-dress-tag-options></div>
+                    <button class="button secondary" type="submit" data-dress-metadata-submit>
+                      {escape(copy.get("metadataSaveButton") or "Save metadata")}
+                    </button>
+                    <p class="auth-message form-message" data-dress-metadata-message role="status" aria-live="polite"></p>
+                  </form>
+                </section>
+              </div>
+            </div>
+
+            <div class="mobile-app-panel is-hidden" data-mobile-panel="session">
+              <div class="dashboard-panel session-panel" data-swipe-session-panel>
+                <div class="session-panel-header">
+                  <div>
+                    <h3>{escape(copy.get("sessionTitle") or "Default Session")}</h3>
+                    <p class="lead">{escape(copy.get("sessionSubtitle") or "Start a quick like/dislike swiping session from your default dress folder.")}</p>
+                  </div>
+                </div>
               <div class="session-store-picker is-hidden" data-session-store-picker>
                 <label>
                   For what store would you like to initiate a session?
@@ -1008,10 +1048,12 @@ def render_store_details(copy: dict) -> str:
             </div>
           </div>
 
-          <nav class="mobile-bottom-tabs" aria-label="Store workflow tabs">
-            <button class="mobile-bottom-tab is-active" type="button" data-mobile-tab="management">Store Management</button>
-            <button class="mobile-bottom-tab" type="button" data-mobile-tab="session">Start Session</button>
-          </nav>
+            <nav class="mobile-bottom-tabs" aria-label="Store workflow tabs">
+              <button class="mobile-bottom-tab is-active" type="button" data-mobile-tab="management">Dashboard</button>
+              <button class="mobile-bottom-tab" type="button" data-mobile-tab="session">Start Session</button>
+              <button class="mobile-bottom-tab" type="button">Inventory</button>
+            </nav>
+          </div>
         </div>
       </div>
     """
