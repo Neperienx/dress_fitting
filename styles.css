@@ -594,6 +594,49 @@ h1 {
   gap: 1.5rem;
 }
 
+.mobile-app-shell {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 5.5rem;
+}
+
+.mobile-app-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.mobile-bottom-tabs {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 1.25rem));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  padding: 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 14px 28px rgba(58, 34, 58, 0.14);
+  z-index: 12;
+}
+
+.mobile-bottom-tab {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+}
+
+.mobile-bottom-tab.is-active {
+  background: var(--primary);
+  color: #fff;
+}
+
 .dress-photo-grid {
   display: grid;
   gap: 0.75rem;
@@ -726,6 +769,28 @@ h1 {
 .session-panel {
   display: grid;
   gap: 1rem;
+}
+
+.session-store-picker {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.session-store-picker label {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+
+.session-store-picker select {
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 1rem;
 }
 
 .session-panel-header {
@@ -939,4 +1004,19 @@ h1 {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #fff;
+}
+
+@media (min-width: 961px) {
+  .mobile-app-shell {
+    padding-bottom: 1rem;
+  }
+
+  .mobile-bottom-tabs {
+    position: sticky;
+    transform: none;
+    left: auto;
+    bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }

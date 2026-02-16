@@ -874,127 +874,144 @@ def render_store_details(copy: dict) -> str:
             <p class="lead">{escape(copy.get("subtitle") or "Manage your store and dress photos in one place.")}</p>
           </div>
         </div>
-
-        <div class="dashboard-panel store-detail">
-          <p class="store-detail-name" data-store-details-name>
-            {escape(copy.get("empty") or "Select a store from the overview first.")}
-          </p>
-          <p class="store-detail-location" data-store-details-address></p>
-          <p class="store-detail-meta" data-store-details-photo-count></p>
-          <p class="store-detail-meta" data-store-details-owner></p>
-          <p class="store-detail-meta" data-store-details-invite></p>
-          <p class="store-detail-meta" data-store-details-created></p>
-        </div>
-
-        <div class="dashboard-panel dress-preview-panel">
-          <h3>{escape(copy.get("previewTitle") or "Dress preview")}</h3>
-          <img class="dress-preview-image is-hidden" data-dress-preview-image alt="Detailed dress preview" />
-        </div>
-
-        <div class="dashboard-panel">
-          <h3>{escape(copy.get("photoTitle") or "Upload bridal dress photos")}</h3>
-          <form class="store-form" data-dress-photo-form>
-            <label>
-              {escape(copy.get("photoUploadLabel") or "Dress photo")}
-              <input
-                type="file"
-                accept=".png,.jpg,.jpeg,.webp"
-                data-dress-photo-input
-              />
-            </label>
-            <button class="button secondary" type="submit" data-dress-photo-submit>
-              {escape(copy.get("photoUploadButton") or "Upload photo")}
-            </button>
-            <p
-              class="auth-message form-message"
-              data-dress-photo-message
-              role="status"
-              aria-live="polite"
-            ></p>
-          </form>
-        </div>
-
-        <div class="dashboard-panel">
-          <h3>{escape(copy.get("galleryTitle") or "Dress photo gallery")}</h3>
-          <div class="dress-photo-grid" data-dress-miniatures></div>
-        </div>
-
-        <div class="dashboard-panel">
-          <h3>{escape(copy.get("metadataTitle") or "Dress metadata")}</h3>
-          <form class="store-form" data-dress-metadata-form>
-            <label>
-              {escape(copy.get("metadataPriceLabel") or "Price")}
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="{escape(copy.get('metadataPricePlaceholder') or 'e.g. 1299.00')}"
-                data-dress-price-input
-              />
-            </label>
-            <div class="dress-tag-options" data-dress-tag-options></div>
-            <button class="button secondary" type="submit" data-dress-metadata-submit>
-              {escape(copy.get("metadataSaveButton") or "Save metadata")}
-            </button>
-            <p class="auth-message form-message" data-dress-metadata-message role="status" aria-live="polite"></p>
-          </form>
-        </div>
-
-        <div class="dashboard-panel session-panel" data-swipe-session-panel>
-          <div class="session-panel-header">
-            <div>
-              <h3>{escape(copy.get("sessionTitle") or "Default Session")}</h3>
-              <p class="lead">{escape(copy.get("sessionSubtitle") or "Start a quick like/dislike swiping session from your default dress folder.")}</p>
+        <div class="mobile-app-shell" data-mobile-app-shell>
+          <div class="mobile-app-panel" data-mobile-panel="management">
+            <div class="dashboard-panel store-detail">
+              <p class="store-detail-name" data-store-details-name>
+                {escape(copy.get("empty") or "Select a store from the overview first.")}
+              </p>
+              <p class="store-detail-location" data-store-details-address></p>
+              <p class="store-detail-meta" data-store-details-photo-count></p>
+              <p class="store-detail-meta" data-store-details-owner></p>
+              <p class="store-detail-meta" data-store-details-invite></p>
+              <p class="store-detail-meta" data-store-details-created></p>
             </div>
-            <button class="button" type="button" data-start-session-button>Start a Session</button>
+
+            <div class="dashboard-panel dress-preview-panel">
+              <h3>{escape(copy.get("previewTitle") or "Dress preview")}</h3>
+              <img class="dress-preview-image is-hidden" data-dress-preview-image alt="Detailed dress preview" />
+            </div>
+
+            <div class="dashboard-panel">
+              <h3>{escape(copy.get("photoTitle") or "Upload bridal dress photos")}</h3>
+              <form class="store-form" data-dress-photo-form>
+                <label>
+                  {escape(copy.get("photoUploadLabel") or "Dress photo")}
+                  <input
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp"
+                    data-dress-photo-input
+                  />
+                </label>
+                <button class="button secondary" type="submit" data-dress-photo-submit>
+                  {escape(copy.get("photoUploadButton") or "Upload photo")}
+                </button>
+                <p
+                  class="auth-message form-message"
+                  data-dress-photo-message
+                  role="status"
+                  aria-live="polite"
+                ></p>
+              </form>
+            </div>
+
+            <div class="dashboard-panel">
+              <h3>{escape(copy.get("galleryTitle") or "Dress photo gallery")}</h3>
+              <div class="dress-photo-grid" data-dress-miniatures></div>
+            </div>
+
+            <div class="dashboard-panel">
+              <h3>{escape(copy.get("metadataTitle") or "Dress metadata")}</h3>
+              <form class="store-form" data-dress-metadata-form>
+                <label>
+                  {escape(copy.get("metadataPriceLabel") or "Price")}
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="{escape(copy.get('metadataPricePlaceholder') or 'e.g. 1299.00')}"
+                    data-dress-price-input
+                  />
+                </label>
+                <div class="dress-tag-options" data-dress-tag-options></div>
+                <button class="button secondary" type="submit" data-dress-metadata-submit>
+                  {escape(copy.get("metadataSaveButton") or "Save metadata")}
+                </button>
+                <p class="auth-message form-message" data-dress-metadata-message role="status" aria-live="polite"></p>
+              </form>
+            </div>
           </div>
-          <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
-          <div class="swipe-workspace is-hidden" data-swipe-workspace>
-            <div class="swipe-card" data-swipe-card>
-              <span class="swipe-chip" data-swipe-category-chip></span>
-              <img class="swipe-image" data-swipe-image alt="Dress session photo" />
-              <p class="swipe-caption" data-swipe-caption></p>
-            </div>
-            <div class="swipe-actions">
-              <button class="button secondary swipe-action" type="button" data-swipe-dislike>
-                ← Dislike
-              </button>
-              <button class="button swipe-action" type="button" data-swipe-like>
-                Like →
-              </button>
-            </div>
-            <p class="store-detail-meta" data-swipe-progress></p>
-            <p class="store-detail-meta" data-swipe-selected-tags></p>
-          </div>
-          <div class="session-results is-hidden" data-session-results>
-            <h4>Session Insights</h4>
-            <p class="store-detail-location">Review preference signals and ranked in-stock matches for this bride.</p>
-            <div class="session-results-tabs" role="tablist" aria-label="Session result tabs">
-              <button class="session-results-tab is-active" type="button" role="tab" aria-selected="true" data-session-results-tab="insights">
-                Tag insights
-              </button>
-              <button class="session-results-tab" type="button" role="tab" aria-selected="false" data-session-results-tab="ranking">
-                Dress ranking
-              </button>
-            </div>
-            <div class="session-results-panel" data-session-results-panel="insights">
-              <div class="session-bars" data-session-bars></div>
-            </div>
-            <div class="session-results-panel is-hidden" data-session-results-panel="ranking">
-              <div class="session-ranking" data-session-ranking>
-                <div class="session-ranking-viewer">
-                  <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+
+          <div class="mobile-app-panel is-hidden" data-mobile-panel="session">
+            <div class="dashboard-panel session-panel" data-swipe-session-panel>
+              <div class="session-panel-header">
+                <div>
+                  <h3>{escape(copy.get("sessionTitle") or "Default Session")}</h3>
+                  <p class="lead">{escape(copy.get("sessionSubtitle") or "Start a quick like/dislike swiping session from your default dress folder.")}</p>
                 </div>
-                <div class="session-ranking-actions">
-                  <button class="button secondary" type="button" data-session-ranking-prev>←</button>
-                  <button class="button secondary" type="button" data-session-ranking-next>→</button>
+                <button class="button" type="button" data-start-session-button>Start a Session</button>
+              </div>
+              <div class="session-store-picker is-hidden" data-session-store-picker>
+                <label>
+                  For what store would you like to initiate a session?
+                  <select data-session-store-select></select>
+                </label>
+                <button class="button secondary" type="button" data-session-store-confirm>Use this store</button>
+              </div>
+              <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
+              <div class="swipe-workspace is-hidden" data-swipe-workspace>
+                <div class="swipe-card" data-swipe-card>
+                  <span class="swipe-chip" data-swipe-category-chip></span>
+                  <img class="swipe-image" data-swipe-image alt="Dress session photo" />
+                  <p class="swipe-caption" data-swipe-caption></p>
                 </div>
-                <p class="store-detail-meta" data-session-ranking-position></p>
-                <p class="store-detail-location" data-session-ranking-caption></p>
-                <p class="store-detail-location" data-session-ranking-score></p>
+                <div class="swipe-actions">
+                  <button class="button secondary swipe-action" type="button" data-swipe-dislike>
+                    ← Dislike
+                  </button>
+                  <button class="button swipe-action" type="button" data-swipe-like>
+                    Like →
+                  </button>
+                </div>
+                <p class="store-detail-meta" data-swipe-progress></p>
+                <p class="store-detail-meta" data-swipe-selected-tags></p>
+              </div>
+              <div class="session-results is-hidden" data-session-results>
+                <h4>Session Insights</h4>
+                <p class="store-detail-location">Review preference signals and ranked in-stock matches for this bride.</p>
+                <div class="session-results-tabs" role="tablist" aria-label="Session result tabs">
+                  <button class="session-results-tab is-active" type="button" role="tab" aria-selected="true" data-session-results-tab="insights">
+                    Tag insights
+                  </button>
+                  <button class="session-results-tab" type="button" role="tab" aria-selected="false" data-session-results-tab="ranking">
+                    Dress ranking
+                  </button>
+                </div>
+                <div class="session-results-panel" data-session-results-panel="insights">
+                  <div class="session-bars" data-session-bars></div>
+                </div>
+                <div class="session-results-panel is-hidden" data-session-results-panel="ranking">
+                  <div class="session-ranking" data-session-ranking>
+                    <div class="session-ranking-viewer">
+                      <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+                    </div>
+                    <div class="session-ranking-actions">
+                      <button class="button secondary" type="button" data-session-ranking-prev>←</button>
+                      <button class="button secondary" type="button" data-session-ranking-next>→</button>
+                    </div>
+                    <p class="store-detail-meta" data-session-ranking-position></p>
+                    <p class="store-detail-location" data-session-ranking-caption></p>
+                    <p class="store-detail-location" data-session-ranking-score></p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
+          <nav class="mobile-bottom-tabs" aria-label="Store workflow tabs">
+            <button class="mobile-bottom-tab is-active" type="button" data-mobile-tab="management">Store Management</button>
+            <button class="mobile-bottom-tab" type="button" data-mobile-tab="session">Start Session</button>
+          </nav>
         </div>
       </div>
     """

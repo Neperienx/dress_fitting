@@ -23,6 +23,9 @@ const dressMetadataMessage = dressMetadataForm?.querySelector('[data-dress-metad
 const dressTagOptionsContainer = dressMetadataForm?.querySelector('[data-dress-tag-options]');
 const startSessionButton = document.querySelector('[data-start-session-button]');
 const sessionMessage = document.querySelector('[data-session-message]');
+const sessionStorePicker = document.querySelector('[data-session-store-picker]');
+const sessionStoreSelect = document.querySelector('[data-session-store-select]');
+const sessionStoreConfirm = document.querySelector('[data-session-store-confirm]');
 const swipeWorkspace = document.querySelector('[data-swipe-workspace]');
 const swipeCategoryChip = document.querySelector('[data-swipe-category-chip]');
 const swipeImage = document.querySelector('[data-swipe-image]');
@@ -52,6 +55,8 @@ const userMenuTrigger = document.querySelector('[data-user-menu-trigger]');
 const userMenuName = document.querySelector('[data-user-menu-name]');
 const userMenuPanel = document.querySelector('[data-user-menu-panel]');
 const logoutButton = document.querySelector('[data-auth-logout]');
+const mobilePanels = Array.from(document.querySelectorAll('[data-mobile-panel]'));
+const mobileTabButtons = Array.from(document.querySelectorAll('[data-mobile-tab]'));
 
 let photoLightbox = null;
 let photoLightboxImage = null;
@@ -61,6 +66,7 @@ let selectedStoreId = '';
 let activeStoreCanManagePhotos = false;
 let currentDressPhotos = [];
 let tagOptions = null;
+let linkedStores = [];
 
 let swipeDeck = [];
 let swipeIndex = 0;
@@ -186,6 +192,33 @@ if (logoutButton) {
 
 updateHeaderAuth();
 
+const setMobileTab = (tabName) => {
+  if (!mobilePanels.length || !mobileTabButtons.length) {
+    return;
+  }
+  mobilePanels.forEach((panel) => {
+    panel.classList.toggle('is-hidden', panel.dataset.mobilePanel !== tabName);
+  });
+  mobileTabButtons.forEach((button) => {
+    const isActive = button.dataset.mobileTab === tabName;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+};
+
+if (mobileTabButtons.length && mobilePanels.length) {
+  mobileTabButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const tabName = button.dataset.mobileTab;
+      if (!tabName) {
+        return;
+      }
+      setMobileTab(tabName);
+    });
+  });
+  setMobileTab('management');
+}
+
 const getActiveLocale = () => (document.documentElement?.lang || 'en').trim().toLowerCase() || 'en';
 
 const getLocalizedValue = (labels, locale, fallback = 'en') => {
@@ -238,6 +271,38 @@ const setSessionMessage = (message, type) => {
   if (type === 'success') {
     sessionMessage.classList.add('is-success');
   }
+};
+
+const getManageableStores = () => {
+  const currentUser = getSessionUser();
+  if (!currentUser) {
+    return [];
+  }
+  return linkedStores.filter((store) => store && store.owner_email === currentUser);
+};
+
+const updateSessionStorePicker = () => {
+  if (!sessionStorePicker || !sessionStoreSelect) {
+    return;
+  }
+  const manageableStores = getManageableStores();
+  sessionStoreSelect.innerHTML = '';
+
+  manageableStores.forEach((store) => {
+    const option = document.createElement('option');
+    option.value = String(store.id);
+    option.textContent = `${store.name} — ${store.location}`;
+    sessionStoreSelect.appendChild(option);
+  });
+
+  if (manageableStores.length > 1) {
+    sessionStorePicker.classList.remove('is-hidden');
+    const selectedFromDetails = manageableStores.find((store) => String(store.id) === selectedStoreId);
+    sessionStoreSelect.value = selectedFromDetails ? String(selectedFromDetails.id) : String(manageableStores[0].id);
+    return;
+  }
+
+  sessionStorePicker.classList.add('is-hidden');
 };
 
 const setAdminMessage = (message, type) => {
@@ -652,6 +717,40 @@ const startDefaultSession = async () => {
   }
 };
 
+const activateStoreById = (storeId) => {
+  if (!storeId) {
+    return false;
+  }
+  const nextStore = linkedStores.find((store) => String(store.id) === String(storeId));
+  if (!nextStore) {
+    return false;
+  }
+  updateDetailsSummary(nextStore);
+  updateSessionStorePicker();
+  const params = new URLSearchParams(window.location.search);
+  params.set('store', String(nextStore.id));
+  const nextUrl = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState({}, '', nextUrl);
+  return true;
+};
+
+const handleStartSession = () => {
+  const manageableStores = getManageableStores();
+  if (!manageableStores.length) {
+    setSessionMessage('Only the store owner can start a session.', 'error');
+    return;
+  }
+
+  if (manageableStores.length === 1) {
+    activateStoreById(manageableStores[0].id);
+    startDefaultSession();
+    return;
+  }
+
+  updateSessionStorePicker();
+  setSessionMessage('For what store would you like to initiate a session?', '');
+};
+
 const setDressPhotoMessage = (message, type) => {
   if (!dressPhotoMessage) {
     return;
@@ -969,8 +1068,9 @@ const updateDetailsSummary = (store) => {
   if (dressMetadataSubmit) {
     dressMetadataSubmit.disabled = !activeStoreCanManagePhotos;
   }
+  const hasAnyManageableStore = getManageableStores().length > 0;
   if (startSessionButton) {
-    startSessionButton.disabled = !activeStoreCanManagePhotos;
+    startSessionButton.disabled = !hasAnyManageableStore;
   }
   if (!activeStoreCanManagePhotos) {
     if (swipeWorkspace) {
@@ -979,7 +1079,11 @@ const updateDetailsSummary = (store) => {
     if (sessionResults) {
       sessionResults.classList.add('is-hidden');
     }
-    setSessionMessage('Only the store owner can run swipe sessions.', 'error');
+    if (!hasAnyManageableStore) {
+      setSessionMessage('Only the store owner can run swipe sessions.', 'error');
+    } else {
+      setSessionMessage('Switch to one of your owned stores to run a session.', '');
+    }
   } else {
     setSessionMessage('', '');
   }
@@ -998,11 +1102,7 @@ const loadStoreDetailsPage = async () => {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const storeId = params.get('store');
-  if (!storeId) {
-    updateDetailsSummary(null);
-    return;
-  }
+  const requestedStoreId = params.get('store');
 
   setDressPhotoMessage('', '');
   setDressMetadataMessage('', '');
@@ -1020,9 +1120,20 @@ const loadStoreDetailsPage = async () => {
 
     const data = await response.json();
     const stores = Array.isArray(data.stores) ? data.stores : [];
-    const store = stores.find((candidate) => String(candidate.id) === storeId);
+    linkedStores = stores;
+    updateSessionStorePicker();
+    const fallbackStoreId = stores.length ? String(stores[0].id) : '';
+    const resolvedStoreId = requestedStoreId || fallbackStoreId;
+    const store = stores.find((candidate) => String(candidate.id) === resolvedStoreId);
+    if (resolvedStoreId && String(resolvedStoreId) !== requestedStoreId) {
+      const nextParams = new URLSearchParams(window.location.search);
+      nextParams.set('store', String(resolvedStoreId));
+      window.history.replaceState({}, '', `${window.location.pathname}?${nextParams.toString()}`);
+    }
     updateDetailsSummary(store || null);
   } catch (error) {
+    linkedStores = [];
+    updateSessionStorePicker();
     updateDetailsSummary(null);
   }
 };
@@ -1594,7 +1705,23 @@ const loadAdminPage = async () => {
 };
 
 if (startSessionButton) {
-  startSessionButton.addEventListener('click', startDefaultSession);
+  startSessionButton.addEventListener('click', handleStartSession);
+}
+
+if (sessionStoreConfirm) {
+  sessionStoreConfirm.addEventListener('click', () => {
+    const storeId = sessionStoreSelect?.value;
+    if (!storeId) {
+      setSessionMessage('Please select a store first.', 'error');
+      return;
+    }
+    const didActivate = activateStoreById(storeId);
+    if (!didActivate) {
+      setSessionMessage('Unable to load this store. Please choose another one.', 'error');
+      return;
+    }
+    startDefaultSession();
+  });
 }
 
 if (dislikeButton) {
