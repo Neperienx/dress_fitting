@@ -321,6 +321,19 @@ const getLinkedStoreMembers = (store) => {
     .filter((member, index, members) => Boolean(member) && members.indexOf(member) === index);
 };
 
+const formatTeamMemberDisplayName = (member) => {
+  const normalized = (member || '').trim();
+  if (!normalized) {
+    return '';
+  }
+  const usernamePart = normalized.includes('@') ? normalized.split('@')[0] : normalized;
+  return usernamePart
+    .split(/[._\-\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+};
+
 const renderTeamMembersForStore = (store) => {
   if (!teamResults || !teamSelectedStore || !teamMemberList) {
     return;
@@ -345,7 +358,17 @@ const renderTeamMembersForStore = (store) => {
     members.forEach((member) => {
       const item = document.createElement('li');
       item.className = 'team-member-list-item';
-      item.textContent = member;
+
+      const memberName = document.createElement('strong');
+      memberName.className = 'team-member-name';
+      memberName.textContent = formatTeamMemberDisplayName(member) || member;
+
+      const memberEmail = document.createElement('span');
+      memberEmail.className = 'team-member-email';
+      memberEmail.textContent = member;
+
+      item.appendChild(memberName);
+      item.appendChild(memberEmail);
       teamMemberList.appendChild(item);
     });
   }
