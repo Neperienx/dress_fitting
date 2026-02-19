@@ -530,7 +530,6 @@ def build_autolabel_schema(tag_options: dict) -> tuple[dict, dict]:
             "accessories": {
                 "type": "array",
                 "items": {"type": "string", "enum": labels_by_field["accessories"]},
-                "uniqueItems": True,
             },
             "needs_review": {"type": "boolean"},
             "notes": {"type": "string"},
