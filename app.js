@@ -29,6 +29,12 @@ const sessionMessage = document.querySelector('[data-session-message]');
 const sessionStorePicker = document.querySelector('[data-session-store-picker]');
 const sessionStoreSelect = document.querySelector('[data-session-store-select]');
 const sessionStoreConfirm = document.querySelector('[data-session-store-confirm]');
+const teamStorePicker = document.querySelector('[data-team-store-picker]');
+const teamStoreGrid = document.querySelector('[data-team-store-grid]');
+const teamMessage = document.querySelector('[data-team-message]');
+const teamResults = document.querySelector('[data-team-results]');
+const teamSelectedStore = document.querySelector('[data-team-selected-store]');
+const teamMemberList = document.querySelector('[data-team-member-list]');
 const sessionRouteGrid = document.querySelector('[data-session-route-grid]');
 const sessionRouteMessage = document.querySelector('[data-session-route-message]');
 const swipeWorkspace = document.querySelector('[data-swipe-workspace]');
@@ -290,6 +296,111 @@ const setSessionRouteMessage = (message, type) => {
   if (type === 'success') {
     sessionRouteMessage.classList.add('is-success');
   }
+};
+
+const setTeamMessage = (message, type) => {
+  if (!teamMessage) {
+    return;
+  }
+  teamMessage.textContent = message;
+  teamMessage.classList.remove('is-error', 'is-success');
+  if (type === 'error') {
+    teamMessage.classList.add('is-error');
+  }
+  if (type === 'success') {
+    teamMessage.classList.add('is-success');
+  }
+};
+
+const getLinkedStoreMembers = (store) => {
+  if (!store || !Array.isArray(store.team_members)) {
+    return [];
+  }
+  return store.team_members
+    .map((member) => (member || '').toString().trim())
+    .filter((member, index, members) => Boolean(member) && members.indexOf(member) === index);
+};
+
+const renderTeamMembersForStore = (store) => {
+  if (!teamResults || !teamSelectedStore || !teamMemberList) {
+    return;
+  }
+  if (!store) {
+    teamResults.classList.add('is-hidden');
+    teamSelectedStore.textContent = '';
+    teamMemberList.innerHTML = '';
+    return;
+  }
+
+  const members = getLinkedStoreMembers(store);
+  teamSelectedStore.textContent = `${store.name || 'Selected store'} team members`;
+  teamMemberList.innerHTML = '';
+
+  if (!members.length) {
+    const emptyItem = document.createElement('li');
+    emptyItem.className = 'team-member-list-item';
+    emptyItem.textContent = 'No linked team members found for this store yet.';
+    teamMemberList.appendChild(emptyItem);
+  } else {
+    members.forEach((member) => {
+      const item = document.createElement('li');
+      item.className = 'team-member-list-item';
+      item.textContent = member;
+      teamMemberList.appendChild(item);
+    });
+  }
+
+  teamResults.classList.remove('is-hidden');
+};
+
+const renderTeamStorePicker = () => {
+  if (!teamStorePicker || !teamStoreGrid) {
+    return;
+  }
+  teamStoreGrid.innerHTML = '';
+
+  if (!linkedStores.length) {
+    teamStorePicker.classList.add('is-hidden');
+    renderTeamMembersForStore(null);
+    setTeamMessage('No linked stores found for this account.', 'error');
+    return;
+  }
+
+  if (linkedStores.length === 1) {
+    teamStorePicker.classList.add('is-hidden');
+    renderTeamMembersForStore(linkedStores[0]);
+    setTeamMessage('Showing all users linked to your store.', '');
+    return;
+  }
+
+  teamStorePicker.classList.remove('is-hidden');
+  setTeamMessage('Select a store to view linked users.', '');
+  const selectedStoreFromDetails = linkedStores.find((store) => String(store.id) === String(selectedStoreId));
+  renderTeamMembersForStore(selectedStoreFromDetails || null);
+
+  linkedStores.forEach((store) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'store-tile';
+    button.dataset.storeId = String(store.id);
+
+    const name = document.createElement('span');
+    name.className = 'store-name';
+    name.textContent = store.name || '';
+
+    const location = document.createElement('span');
+    location.className = 'store-location';
+    location.textContent = store.location || '';
+
+    button.appendChild(name);
+    button.appendChild(location);
+    button.addEventListener('click', () => {
+      renderTeamMembersForStore(store);
+      setTeamMessage('', '');
+    });
+
+    teamStoreGrid.appendChild(button);
+  });
 };
 
 const redirectToSessionStore = (storeId) => {
@@ -1070,6 +1181,7 @@ const updateDetailsSummary = (store) => {
     setSessionMessage('', '');
     activeStoreCanManagePhotos = false;
     renderDetailsGallery([], '');
+    renderTeamStorePicker();
     return;
   }
 
@@ -1135,6 +1247,7 @@ const updateDetailsSummary = (store) => {
     setSessionMessage('', '');
   }
   renderDetailsGallery(dressPhotos, String(store.id));
+  renderTeamStorePicker();
 };
 
 const loadStoreDetailsPage = async () => {
@@ -1169,6 +1282,7 @@ const loadStoreDetailsPage = async () => {
     const stores = Array.isArray(data.stores) ? data.stores : [];
     linkedStores = stores;
     updateSessionStorePicker();
+    renderTeamStorePicker();
     const fallbackStoreId = stores.length ? String(stores[0].id) : '';
     const resolvedStoreId = requestedStoreId || fallbackStoreId;
     const store = stores.find((candidate) => String(candidate.id) === resolvedStoreId);
@@ -1195,6 +1309,7 @@ const loadStoreDetailsPage = async () => {
   } catch (error) {
     linkedStores = [];
     updateSessionStorePicker();
+    renderTeamStorePicker();
     updateDetailsSummary(null);
   }
 };
