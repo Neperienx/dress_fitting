@@ -1023,13 +1023,31 @@ h1 {
 
 .team-member-list {
   margin: 0;
-  padding-left: 1rem;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.65rem;
 }
 
 .team-member-list-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.2rem;
   color: var(--text);
+}
+
+.team-member-name {
+  font-size: 0.94rem;
+}
+
+.team-member-email {
+  color: var(--muted);
+  font-size: 0.8rem;
+  word-break: break-word;
 }
 
 
