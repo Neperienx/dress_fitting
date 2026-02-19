@@ -798,6 +798,9 @@ def render_dashboard(copy: dict) -> str:
               <a class="button secondary is-disabled" href="#" data-store-details-link>
                 {escape(copy.get("detailsButton") or "Go to store details")}
               </a>
+              <a class="button" href="/session">
+                {escape(copy.get("sessionButton") or "Start Session")}
+              </a>
             </div>
           </div>
         </div>
@@ -859,6 +862,25 @@ def render_dashboard(copy: dict) -> str:
               ></p>
             </form>
           </div>
+        </div>
+      </div>
+    """
+
+
+def render_session(copy: dict) -> str:
+    return f"""
+      <div class="container dashboard" id="session-route">
+        <div class="dashboard-header">
+          <div>
+            <p class="eyebrow">{escape(copy.get("eyebrow") or "Session launcher")}</p>
+            <h2>{escape(copy.get("title") or "Start Session")}</h2>
+            <p class="lead">{escape(copy.get("subtitle") or "Pick a store to launch a bridal swipe session.")}</p>
+          </div>
+        </div>
+        <div class="dashboard-panel">
+          <h3>{escape(copy.get("storesTitle") or "Choose your store")}</h3>
+          <p class="store-detail-location" data-session-route-message></p>
+          <div class="store-grid" data-session-route-grid></div>
         </div>
       </div>
     """
@@ -1103,6 +1125,7 @@ RENDERERS = {
     "login": render_login,
     "dashboard": render_dashboard,
     "storeDetails": render_store_details,
+    "session": render_session,
     "admin": render_admin,
     "footer": render_footer,
 }
@@ -1140,6 +1163,7 @@ def render_page(locale: str, page_id: str) -> str:
         "login": "Log in — Bridal Studio Sessions",
         "stores": "Stores — Bridal Studio Sessions",
         "store-details": "Store Details — Bridal Studio Sessions",
+        "session": "Start Session — Bridal Studio Sessions",
         "admin": "Admin — Bridal Studio Sessions",
     }
     page_title = page_titles.get(page_id, page_titles["landing"])
@@ -1604,6 +1628,15 @@ class LandingHandler(SimpleHTTPRequestHandler):
             query = parse_qs(parsed.query)
             locale = query.get("lang", [""])[0]
             page = render_page(locale, "admin")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(page.encode("utf-8"))
+            return
+        if parsed.path in {"/session", "/session/"}:
+            query = parse_qs(parsed.query)
+            locale = query.get("lang", [""])[0]
+            page = render_page(locale, "session")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
