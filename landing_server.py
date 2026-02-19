@@ -260,6 +260,29 @@ def fetch_store_dress_photos(conn: sqlite3.Connection, store_id: int) -> list[di
     return photos
 
 
+def fetch_store_team_members(
+    conn: sqlite3.Connection, store_id: int, owner_email: str
+) -> list[str]:
+    owner = (owner_email or "").strip().lower()
+    member_rows = conn.execute(
+        """
+        SELECT member_email
+        FROM store_members
+        WHERE store_id = ?
+        ORDER BY joined_at ASC, id ASC
+        """,
+        (store_id,),
+    ).fetchall()
+    members = []
+    if owner:
+        members.append(owner)
+    for row in member_rows:
+        member_email = (row[0] or "").strip().lower()
+        if member_email and member_email not in members:
+            members.append(member_email)
+    return members
+
+
 def fetch_stores(user_email: str) -> list[dict]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -278,6 +301,9 @@ def fetch_stores(user_email: str) -> list[dict]:
         for row in rows:
             store = dict(row)
             store["dress_photos"] = fetch_store_dress_photos(conn, store["id"])
+            store["team_members"] = fetch_store_team_members(
+                conn, store["id"], store.get("owner_email") or ""
+            )
             stores.append(normalize_store_payload(store))
     return stores
 
@@ -335,6 +361,9 @@ def join_store(invite_code: str, member_email: str) -> dict | None:
         normalized_store = dict(store)
         normalized_store["dress_photos"] = fetch_store_dress_photos(
             conn, normalized_store["id"]
+        )
+        normalized_store["team_members"] = fetch_store_team_members(
+            conn, normalized_store["id"], normalized_store.get("owner_email") or ""
         )
     return normalize_store_payload(normalized_store)
 
@@ -415,6 +444,9 @@ def fetch_store_by_id(store_id: int) -> dict | None:
             return None
         payload = dict(store)
         payload["dress_photos"] = fetch_store_dress_photos(conn, store_id)
+        payload["team_members"] = fetch_store_team_members(
+            conn, store_id, payload.get("owner_email") or ""
+        )
     return normalize_store_payload(payload)
 
 
@@ -957,8 +989,8 @@ def render_store_details(copy: dict) -> str:
             <button class="bridal-nav-item is-active" type="button" data-mobile-tab="management">Dashboard</button>
             <button class="bridal-nav-item" type="button" data-mobile-tab="session">Start Session</button>
             <button class="bridal-nav-item" type="button" data-mobile-tab="inventory">Inventory</button>
+            <button class="bridal-nav-item" type="button" data-mobile-tab="team">Team &amp; Store</button>
             <a class="bridal-nav-item" href="#">Studio Settings</a>
-            <a class="bridal-nav-item" href="#">Team &amp; Store</a>
           </nav>
         </aside>
 
@@ -1140,12 +1172,33 @@ def render_store_details(copy: dict) -> str:
                 </div>
               </div>
             </div>
+
+            <div class="mobile-app-panel is-hidden" data-mobile-panel="team">
+              <div class="dashboard-panel session-panel">
+                <div class="session-panel-header">
+                  <div>
+                    <h3>Team &amp; Store</h3>
+                    <p class="lead">See who is linked to each store in your account.</p>
+                  </div>
+                </div>
+                <div class="session-store-picker is-hidden" data-team-store-picker>
+                  <p>Pick a store to view linked team members.</p>
+                  <div class="store-grid" data-team-store-grid></div>
+                </div>
+                <p class="auth-message form-message" data-team-message role="status" aria-live="polite"></p>
+                <div class="dashboard-panel is-hidden" data-team-results>
+                  <h4 data-team-selected-store></h4>
+                  <ul class="team-member-list" data-team-member-list></ul>
+                </div>
+              </div>
+            </div>
           </div>
 
             <nav class="mobile-bottom-tabs" aria-label="Store workflow tabs">
               <button class="mobile-bottom-tab is-active" type="button" data-mobile-tab="management">Dashboard</button>
               <button class="mobile-bottom-tab" type="button" data-mobile-tab="session">Start Session</button>
               <button class="mobile-bottom-tab" type="button" data-mobile-tab="inventory">Inventory</button>
+              <button class="mobile-bottom-tab" type="button" data-mobile-tab="team">Team</button>
             </nav>
           </div>
         </div>
