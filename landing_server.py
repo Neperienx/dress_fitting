@@ -895,9 +895,9 @@ def render_store_details(copy: dict) -> str:
             <span>{escape(copy.get("brandName") or "White Lace Bridal")}</span>
           </div>
           <nav class="bridal-sidebar-nav">
-            <a class="bridal-nav-item is-active" href="#">Dashboard</a>
+            <button class="bridal-nav-item is-active" type="button" data-mobile-tab="management">Dashboard</button>
             <button class="bridal-nav-item" type="button" data-mobile-tab="session">Start Session</button>
-            <a class="bridal-nav-item" href="#">Inventory</a>
+            <button class="bridal-nav-item" type="button" data-mobile-tab="inventory">Inventory</button>
             <a class="bridal-nav-item" href="#">Studio Settings</a>
             <a class="bridal-nav-item" href="#">Team &amp; Store</a>
           </nav>
@@ -951,9 +951,12 @@ def render_store_details(copy: dict) -> str:
                 <p class="store-detail-meta" data-store-details-invite></p>
                 <p class="store-detail-meta" data-store-details-created></p>
               </div>
+            </div>
 
+            <div class="mobile-app-panel is-hidden" data-mobile-panel="inventory">
               <div class="dashboard-panel dress-preview-panel">
-                <h3>{escape(copy.get("previewTitle") or "Dress preview")}</h3>
+                <h3>{escape(copy.get("galleryTitle") or "Manage Inventory")}</h3>
+                <p class="store-detail-location">Select a miniature to preview and tag it, then upload or remove dresses as needed.</p>
                 <img class="dress-preview-image is-hidden" data-dress-preview-image alt="Detailed dress preview" />
                 <div class="dress-photo-grid" data-dress-miniatures></div>
               </div>
@@ -1073,7 +1076,7 @@ def render_store_details(copy: dict) -> str:
             <nav class="mobile-bottom-tabs" aria-label="Store workflow tabs">
               <button class="mobile-bottom-tab is-active" type="button" data-mobile-tab="management">Dashboard</button>
               <button class="mobile-bottom-tab" type="button" data-mobile-tab="session">Start Session</button>
-              <button class="mobile-bottom-tab" type="button">Inventory</button>
+              <button class="mobile-bottom-tab" type="button" data-mobile-tab="inventory">Inventory</button>
             </nav>
           </div>
         </div>
