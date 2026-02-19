@@ -437,6 +437,62 @@ def update_store_dress_photo_metadata(
     return result.rowcount > 0
 
 
+def autolabel_store_dress_photos(store: dict, overwrite_existing: bool) -> dict:
+    store_id = int(store.get("id"))
+    photos = list(store.get("dress_photos") or [])
+    updated_count = 0
+    skipped_count = 0
+    failed_count = 0
+    failures = []
+
+    for photo in photos:
+        photo_path = (photo.get("photo_path") or "").strip()
+        existing_tags = photo.get("tags") or []
+        if not photo_path:
+            skipped_count += 1
+            continue
+        if not overwrite_existing and existing_tags:
+            skipped_count += 1
+            continue
+
+        result = run_openai_autolabel(photo_path, BASE_DIR, OPENAI_KEY_PATH, load_tag_options())
+        if result.get("error"):
+            failed_count += 1
+            failures.append(
+                {
+                    "photo_path": photo_path,
+                    "error": result.get("error"),
+                    "debug": result.get("debug") or {},
+                }
+            )
+            continue
+
+        updated = update_store_dress_photo_metadata(
+            store_id=store_id,
+            photo_path=photo_path,
+            price=photo.get("price"),
+            tags=result.get("tags") or [],
+        )
+        if updated:
+            updated_count += 1
+        else:
+            failed_count += 1
+            failures.append(
+                {
+                    "photo_path": photo_path,
+                    "error": "Photo not found.",
+                    "debug": {},
+                }
+            )
+
+    return {
+        "updated_count": updated_count,
+        "skipped_count": skipped_count,
+        "failed_count": failed_count,
+        "failures": failures,
+    }
+
+
 def load_tag_options() -> dict:
     with TAG_OPTIONS_PATH.open("r", encoding="utf-8") as file:
         return json.load(file)
@@ -1006,6 +1062,12 @@ def render_store_details(copy: dict) -> str:
                     <button class="button secondary" type="button" data-dress-autolabel-button>
                       Autolabel
                     </button>
+                    <button class="button secondary" type="button" data-dress-autolabel-all-button>
+                      Autolabel all
+                    </button>
+                    <button class="button secondary" type="button" data-dress-autolabel-overwrite-button>
+                      Autolabel overwrite
+                    </button>
                     <button class="button secondary" type="submit" data-dress-metadata-submit>
                       {escape(copy.get("metadataSaveButton") or "Save metadata")}
                     </button>
@@ -1191,8 +1253,11 @@ class LandingHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         autolabel_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo-autolabel", parsed.path)
-        if autolabel_match:
-            store_id = int(autolabel_match.group(1))
+        autolabel_all_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo-autolabel-all", parsed.path)
+        autolabel_overwrite_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo-autolabel-overwrite", parsed.path)
+        if autolabel_match or autolabel_all_match or autolabel_overwrite_match:
+            store_match = autolabel_match or autolabel_all_match or autolabel_overwrite_match
+            store_id = int(store_match.group(1))
             store = fetch_store_by_id(store_id)
             if not store:
                 self.send_response(404)
@@ -1221,6 +1286,25 @@ class LandingHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(
                     json.dumps({"error": "Only the store owner can autolabel dress metadata."}).encode("utf-8")
+                )
+                return
+
+            if autolabel_all_match or autolabel_overwrite_match:
+                summary = autolabel_store_dress_photos(
+                    store=store,
+                    overwrite_existing=bool(autolabel_overwrite_match),
+                )
+                updated_store = fetch_store_by_id(store_id)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {
+                            "store": updated_store,
+                            "summary": summary,
+                        }
+                    ).encode("utf-8")
                 )
                 return
 

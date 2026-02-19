@@ -20,6 +20,8 @@ const dressMetadataForm = document.querySelector('[data-dress-metadata-form]');
 const dressPriceInput = dressMetadataForm?.querySelector('[data-dress-price-input]');
 const dressMetadataSubmit = dressMetadataForm?.querySelector('[data-dress-metadata-submit]');
 const dressAutolabelButton = dressMetadataForm?.querySelector('[data-dress-autolabel-button]');
+const dressAutolabelAllButton = dressMetadataForm?.querySelector('[data-dress-autolabel-all-button]');
+const dressAutolabelOverwriteButton = dressMetadataForm?.querySelector('[data-dress-autolabel-overwrite-button]');
 const dressMetadataMessage = dressMetadataForm?.querySelector('[data-dress-metadata-message]');
 const dressTagOptionsContainer = dressMetadataForm?.querySelector('[data-dress-tag-options]');
 const startSessionButton = document.querySelector('[data-start-session-button]');
@@ -1050,6 +1052,12 @@ const updateDetailsSummary = (store) => {
     if (dressAutolabelButton) {
       dressAutolabelButton.disabled = true;
     }
+    if (dressAutolabelAllButton) {
+      dressAutolabelAllButton.disabled = true;
+    }
+    if (dressAutolabelOverwriteButton) {
+      dressAutolabelOverwriteButton.disabled = true;
+    }
     if (startSessionButton) {
       startSessionButton.disabled = true;
     }
@@ -1100,6 +1108,12 @@ const updateDetailsSummary = (store) => {
   }
   if (dressAutolabelButton) {
     dressAutolabelButton.disabled = !activeStoreCanManagePhotos;
+  }
+  if (dressAutolabelAllButton) {
+    dressAutolabelAllButton.disabled = !activeStoreCanManagePhotos;
+  }
+  if (dressAutolabelOverwriteButton) {
+    dressAutolabelOverwriteButton.disabled = !activeStoreCanManagePhotos;
   }
   const hasAnyManageableStore = getManageableStores().length > 0;
   if (startSessionButton) {
@@ -1231,6 +1245,55 @@ if (dressPhotoForm) {
 
 
 
+const setAutolabelButtonsDisabled = (disabled) => {
+  if (dressAutolabelButton) {
+    dressAutolabelButton.disabled = disabled;
+  }
+  if (dressAutolabelAllButton) {
+    dressAutolabelAllButton.disabled = disabled;
+  }
+  if (dressAutolabelOverwriteButton) {
+    dressAutolabelOverwriteButton.disabled = disabled;
+  }
+};
+
+const runBulkAutolabel = async (endpoint, startMessage, completeMessage) => {
+  if (!selectedStoreId) {
+    setDressMetadataMessage('Select a store first.', 'error');
+    return;
+  }
+  if (!activeStoreCanManagePhotos) {
+    setDressMetadataMessage('Only the store owner can autolabel metadata.', 'error');
+    return;
+  }
+
+  setAutolabelButtonsDisabled(true);
+  setDressMetadataMessage(startMessage, '');
+  try {
+    const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner_email: getSessionUser() }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setDressMetadataMessage(data.error || 'Unable to autolabel photos right now.', 'error');
+      return;
+    }
+
+    updateDetailsSummary(data.store);
+    const summary = data.summary || {};
+    setDressMetadataMessage(
+      `${completeMessage} Updated: ${summary.updated_count || 0}, skipped: ${summary.skipped_count || 0}, failed: ${summary.failed_count || 0}.`,
+      'success'
+    );
+  } catch (error) {
+    setDressMetadataMessage('Unable to autolabel photos right now.', 'error');
+  } finally {
+    setAutolabelButtonsDisabled(!activeStoreCanManagePhotos);
+  }
+};
+
 if (dressAutolabelButton) {
   dressAutolabelButton.addEventListener('click', async () => {
     if (!selectedStoreId || !selectedDressPhotoPath) {
@@ -1242,7 +1305,7 @@ if (dressAutolabelButton) {
       return;
     }
 
-    dressAutolabelButton.disabled = true;
+    setAutolabelButtonsDisabled(true);
     setDressMetadataMessage('Running autolabel...', '');
     try {
       const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/dress-photo-autolabel`, {
@@ -1276,23 +1339,6 @@ if (dressAutolabelButton) {
 
       const data = await response.json();
       updateDetailsSummary(data.store);
-      const debug = data.debug || {};
-      const inputTokens = debug.input_tokens ?? 'n/a';
-      const outputTokens = debug.output_tokens ?? 'n/a';
-      const sentWidth = debug.sent_width ?? 'n/a';
-      const sentHeight = debug.sent_height ?? 'n/a';
-      const originalWidth = debug.original_width ?? 'n/a';
-      const originalHeight = debug.original_height ?? 'n/a';
-      alert(
-        [
-          `Autolabel complete for selected image: ${selectedDressPhotoPath}`,
-          `Model: ${debug.model || 'n/a'}`,
-          `Input tokens: ${inputTokens}`,
-          `Output tokens: ${outputTokens}`,
-          `Sent resolution: ${sentWidth}x${sentHeight}`,
-          `Original resolution: ${originalWidth}x${originalHeight}`,
-        ].join('\n')
-      );
       setDressMetadataMessage('Autolabel complete and tags saved.', 'success');
     } catch (error) {
       console.error('Autolabel request failed before completion', {
@@ -1302,8 +1348,20 @@ if (dressAutolabelButton) {
       });
       setDressMetadataMessage(`Unable to autolabel this photo right now. ${error?.message ? `(${error.message})` : ''}`.trim(), 'error');
     } finally {
-      dressAutolabelButton.disabled = !activeStoreCanManagePhotos;
+      setAutolabelButtonsDisabled(!activeStoreCanManagePhotos);
     }
+  });
+}
+
+if (dressAutolabelAllButton) {
+  dressAutolabelAllButton.addEventListener('click', async () => {
+    await runBulkAutolabel('dress-photo-autolabel-all', 'Running autolabel for non-labeled photos...', 'Autolabel all complete.');
+  });
+}
+
+if (dressAutolabelOverwriteButton) {
+  dressAutolabelOverwriteButton.addEventListener('click', async () => {
+    await runBulkAutolabel('dress-photo-autolabel-overwrite', 'Running autolabel overwrite for all dresses...', 'Autolabel overwrite complete.');
   });
 }
 
