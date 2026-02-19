@@ -1,3 +1,4 @@
+# Core backend stack (kept for Django app workflows documented in README)
 Django>=5.0,<6.0
 Django-environ>=0.11
 djangorestframework>=3.15
@@ -5,4 +6,10 @@ django-allauth>=0.63
 django-cors-headers>=4.3
 whitenoise>=6.6
 psycopg[binary]>=3.1
-Pillow>=10.3
+
+# Landing server image processing (used by landing_server.py: PIL.Image)
+Pillow>=10.3,<12
+
+# Optional OpenAI Python client (landing_server.py currently calls OpenAI via urllib,
+# but this keeps requirements aligned if the codebase uses the SDK in newer changes)
+openai>=1.54,<2
