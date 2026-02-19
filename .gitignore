@@ -26,3 +26,7 @@ env/
 *.png
 *.jpeg
 *.jpg
+
+.key.txt
+key.txt
+stores.db
