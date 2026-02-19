@@ -98,6 +98,7 @@ def build_autolabel_schema(tag_options: dict) -> tuple[dict, dict]:
             "fabric",
             "accessories",
             "needs_review",
+            "notes",
         ],
     }
     return schema, tag_id_by_label
@@ -166,6 +167,7 @@ def run_openai_autolabel(photo_path: str, base_dir: Path, openai_key_path: Path,
                             "Choose the single best value for silhouette, neckline, back_type, sleeve_type, and fabric. "
                             "For accessories choose zero or more clearly present options. "
                             'If uncertain set "needs_review" true and provide short notes. '
+                            'If confident set "needs_review" false and set "notes" to an empty string. '
                             "Return only JSON matching the schema."
                         ),
                     },
