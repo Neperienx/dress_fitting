@@ -970,6 +970,7 @@ def render_store_details(copy: dict) -> str:
                       <input
                         type="file"
                         accept=".png,.jpg,.jpeg,.webp"
+                        multiple
                         data-dress-photo-input
                       />
                     </label>
@@ -1212,7 +1213,7 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
                 },
             )
-            upload = form["dress_photo"] if "dress_photo" in form else None
+            uploads = form["dress_photo"] if "dress_photo" in form else None
             owner_email = (
                 form["owner_email"].value.strip().lower()
                 if "owner_email" in form and getattr(form["owner_email"], "value", "")
@@ -1228,7 +1229,13 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     ).encode("utf-8")
                 )
                 return
-            if upload is None or not getattr(upload, "filename", ""):
+            upload_items = uploads if isinstance(uploads, list) else [uploads] if uploads else []
+            valid_uploads = [
+                upload
+                for upload in upload_items
+                if upload is not None and getattr(upload, "filename", "")
+            ]
+            if not valid_uploads:
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
@@ -1236,28 +1243,29 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     json.dumps({"error": "dress_photo is required."}).encode("utf-8")
                 )
                 return
-            content = upload.file.read() if upload.file else b""
-            if not content:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(
-                    json.dumps({"error": "Uploaded file is empty."}).encode("utf-8")
-                )
-                return
-            photo_path = save_store_dress_photo(store_id, upload.filename, content)
-            if not photo_path:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(
-                    json.dumps(
-                        {
-                            "error": "Only .png, .jpg, .jpeg, and .webp files are supported.",
-                        }
-                    ).encode("utf-8")
-                )
-                return
+            for upload in valid_uploads:
+                content = upload.file.read() if upload.file else b""
+                if not content:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(
+                        json.dumps({"error": "Uploaded file is empty."}).encode("utf-8")
+                    )
+                    return
+                photo_path = save_store_dress_photo(store_id, upload.filename, content)
+                if not photo_path:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(
+                        json.dumps(
+                            {
+                                "error": "Only .png, .jpg, .jpeg, and .webp files are supported.",
+                            }
+                        ).encode("utf-8")
+                    )
+                    return
             updated_store = fetch_store_by_id(store_id)
             self.send_response(200)
             self.send_header("Content-Type", "application/json")

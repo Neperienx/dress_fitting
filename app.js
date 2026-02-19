@@ -1186,15 +1186,17 @@ if (dressPhotoForm) {
       setDressPhotoMessage('Select a store first.', 'error');
       return;
     }
-    const file = dressPhotoInput?.files?.[0];
-    if (!file) {
-      setDressPhotoMessage('Please choose a photo before uploading.', 'error');
+    const files = Array.from(dressPhotoInput?.files || []).filter(Boolean);
+    if (!files.length) {
+      setDressPhotoMessage('Please choose at least one photo before uploading.', 'error');
       return;
     }
 
     const formData = new FormData();
-    formData.append('dress_photo', file);
-    setDressPhotoMessage('Uploading photo...', '');
+    files.forEach((file) => {
+      formData.append('dress_photo', file);
+    });
+    setDressPhotoMessage(`Uploading ${files.length} photo${files.length === 1 ? '' : 's'}...`, '');
 
     try {
       formData.append('owner_email', getSessionUser());
@@ -1213,7 +1215,7 @@ if (dressPhotoForm) {
       if (dressPhotoInput) {
         dressPhotoInput.value = '';
       }
-      setDressPhotoMessage('Dress photo uploaded.', 'success');
+      setDressPhotoMessage(`${files.length} dress photo${files.length === 1 ? '' : 's'} uploaded.`, 'success');
     } catch (error) {
       setDressPhotoMessage('Unable to upload photo right now.', 'error');
     }

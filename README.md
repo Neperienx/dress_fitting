@@ -35,8 +35,8 @@ Stores can now have their own dress image in the **Stores** page.
 
 How it works:
 1. Open `http://localhost:8000/stores` and select a store tile.
-2. In the store detail card, use **Dress photo** to upload a `.png`, `.jpg`, `.jpeg`, or `.webp` file.
-3. The server saves that file under `images/stores/store-<store_id>/` with a unique filename (for example: `images/stores/store-3/dress-a1b2c3d4.jpg`).
+2. In the store detail card, use **Dress photo** to upload one or more `.png`, `.jpg`, `.jpeg`, or `.webp` files in a single action.
+3. The server saves each selected file under `images/stores/store-<store_id>/` with a unique filename (for example: `images/stores/store-3/dress-a1b2c3d4.jpg`).
 4. The photo is linked only to that store.
 
 Default photo behavior:
