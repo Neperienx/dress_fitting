@@ -569,13 +569,32 @@ def map_autolabel_output_to_tag_ids(raw_output: dict, tag_id_by_label: dict[str,
 
 
 def run_openai_autolabel(photo_path: str) -> dict:
+    debug_info = {
+        "model": OPENAI_AUTOLABEL_MODEL,
+        "photo_path": photo_path,
+    }
     api_key = get_openai_api_key()
     if not api_key:
-        return {"error": "OpenAI key missing. Add key.txt with your API key."}
+        return {
+            "error": "OpenAI key missing. Add key.txt with your API key.",
+            "debug": {**debug_info, "stage": "config", "reason": "missing_api_key"},
+        }
 
     prepared_image = prepare_autolabel_image(photo_path)
     if not prepared_image:
-        return {"error": "Photo not found on disk."}
+        return {
+            "error": "Photo not found on disk.",
+            "debug": {**debug_info, "stage": "prepare_image", "reason": "photo_not_found"},
+        }
+    debug_info.update(
+        {
+            "sent_width": prepared_image["sent_width"],
+            "sent_height": prepared_image["sent_height"],
+            "original_width": prepared_image["original_width"],
+            "original_height": prepared_image["original_height"],
+            "mime_type": prepared_image["mime_type"],
+        }
+    )
 
     tag_options = load_tag_options()
     schema, tag_id_by_label = build_autolabel_schema(tag_options)
@@ -627,9 +646,35 @@ def run_openai_autolabel(photo_path: str) -> dict:
             response_data = json.loads(response.read().decode("utf-8"))
     except HTTPError as error:
         error_message = error.read().decode("utf-8")
-        return {"error": f"OpenAI request failed: {error_message}"}
+        return {
+            "error": f"OpenAI request failed (HTTP {error.code}).",
+            "debug": {
+                **debug_info,
+                "stage": "openai_request",
+                "http_status": error.code,
+                "openai_error": error_message,
+            },
+        }
     except (URLError, TimeoutError) as error:
-        return {"error": f"OpenAI request failed: {error}"}
+        return {
+            "error": "OpenAI request failed due to network/timeout error.",
+            "debug": {
+                **debug_info,
+                "stage": "openai_request",
+                "reason": type(error).__name__,
+                "details": str(error),
+            },
+        }
+    except Exception as error:
+        return {
+            "error": "Autolabel failed before receiving a model response.",
+            "debug": {
+                **debug_info,
+                "stage": "openai_request",
+                "reason": type(error).__name__,
+                "details": str(error),
+            },
+        }
 
     output_text = response_data.get("output_text")
     if not output_text and isinstance(response_data.get("output"), list):
@@ -644,7 +689,14 @@ def run_openai_autolabel(photo_path: str) -> dict:
     try:
         model_output = json.loads(output_text or "{}")
     except json.JSONDecodeError:
-        return {"error": "Unable to parse model JSON output."}
+        return {
+            "error": "Unable to parse model JSON output.",
+            "debug": {
+                **debug_info,
+                "stage": "parse_model_output",
+                "output_text_preview": (output_text or "")[:500],
+            },
+        }
 
     selected_tags = map_autolabel_output_to_tag_ids(model_output, tag_id_by_label)
     usage = response_data.get("usage") or {}
@@ -652,15 +704,11 @@ def run_openai_autolabel(photo_path: str) -> dict:
         "tags": selected_tags,
         "model_output": model_output,
         "debug": {
-            "model": OPENAI_AUTOLABEL_MODEL,
+            **debug_info,
             "input_tokens": usage.get("input_tokens"),
             "output_tokens": usage.get("output_tokens"),
             "total_tokens": usage.get("total_tokens"),
-            "sent_width": prepared_image["sent_width"],
-            "sent_height": prepared_image["sent_height"],
-            "original_width": prepared_image["original_width"],
-            "original_height": prepared_image["original_height"],
-            "mime_type": prepared_image["mime_type"],
+            "stage": "success",
         },
     }
 
@@ -1464,7 +1512,14 @@ class LandingHandler(SimpleHTTPRequestHandler):
                 self.send_response(502)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": result["error"]}).encode("utf-8"))
+                self.wfile.write(
+                    json.dumps(
+                        {
+                            "error": result["error"],
+                            "debug": result.get("debug") or {},
+                        }
+                    ).encode("utf-8")
+                )
                 return
 
             updated = update_store_dress_photo_metadata(
