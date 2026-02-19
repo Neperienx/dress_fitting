@@ -40,6 +40,10 @@
     "admin": [
       "admin",
       "footer"
+    ],
+    "session": [
+      "session",
+      "footer"
     ]
   },
   "blocks": [
@@ -419,7 +423,8 @@
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
           "stores": [],
-          "detailsButton": "Go to store details"
+          "detailsButton": "Go to store details",
+          "sessionButton": "Start Session"
         },
         "fr": {
           "eyebrow": "Account workspace",
@@ -444,7 +449,8 @@
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
           "stores": [],
-          "detailsButton": "Go to store details"
+          "detailsButton": "Go to store details",
+          "sessionButton": "Démarrer une session"
         },
         "de": {
           "eyebrow": "Account workspace",
@@ -469,7 +475,8 @@
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
           "stores": [],
-          "detailsButton": "Go to store details"
+          "detailsButton": "Go to store details",
+          "sessionButton": "Démarrer une session"
         },
         "es": {
           "eyebrow": "Account workspace",
@@ -494,7 +501,8 @@
           "joinPlaceholder": "INVITE-4F2A",
           "joinButton": "Join store",
           "stores": [],
-          "detailsButton": "Go to store details"
+          "detailsButton": "Go to store details",
+          "sessionButton": "Démarrer une session"
         }
       }
     },
@@ -707,6 +715,24 @@
           "subtitle": "Tag dresses in the default folder once so every store session can reuse those labels.",
           "gridTitle": "Default dress library",
           "gridSubtitle": "Use this view like a catalog: set tags per dress and save."
+        }
+      }
+    },
+    {
+      "id": "session",
+      "type": "session",
+      "content": {
+        "en": {
+          "eyebrow": "Session launcher",
+          "title": "Start Session",
+          "subtitle": "Pick a store to launch a bridal swipe session.",
+          "storesTitle": "Choose your store"
+        },
+        "fr": {
+          "eyebrow": "Lanceur de session",
+          "title": "Démarrer une session",
+          "subtitle": "Choisissez une boutique pour lancer une session de swipe nuptiale.",
+          "storesTitle": "Choisissez votre boutique"
         }
       }
     }

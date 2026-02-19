@@ -26,6 +26,8 @@ const sessionMessage = document.querySelector('[data-session-message]');
 const sessionStorePicker = document.querySelector('[data-session-store-picker]');
 const sessionStoreSelect = document.querySelector('[data-session-store-select]');
 const sessionStoreConfirm = document.querySelector('[data-session-store-confirm]');
+const sessionRouteGrid = document.querySelector('[data-session-route-grid]');
+const sessionRouteMessage = document.querySelector('[data-session-route-message]');
 const swipeWorkspace = document.querySelector('[data-swipe-workspace]');
 const swipeCategoryChip = document.querySelector('[data-swipe-category-chip]');
 const swipeImage = document.querySelector('[data-swipe-image]');
@@ -271,6 +273,30 @@ const setSessionMessage = (message, type) => {
   if (type === 'success') {
     sessionMessage.classList.add('is-success');
   }
+};
+
+const setSessionRouteMessage = (message, type) => {
+  if (!sessionRouteMessage) {
+    return;
+  }
+  sessionRouteMessage.textContent = message;
+  sessionRouteMessage.classList.remove('is-error', 'is-success');
+  if (type === 'error') {
+    sessionRouteMessage.classList.add('is-error');
+  }
+  if (type === 'success') {
+    sessionRouteMessage.classList.add('is-success');
+  }
+};
+
+const redirectToSessionStore = (storeId) => {
+  if (!storeId) {
+    return;
+  }
+  const params = new URLSearchParams();
+  params.set('store', String(storeId));
+  params.set('autostartSession', '1');
+  window.location.assign(`/details?${params.toString()}`);
 };
 
 const getManageableStores = () => {
@@ -1131,6 +1157,20 @@ const loadStoreDetailsPage = async () => {
       window.history.replaceState({}, '', `${window.location.pathname}?${nextParams.toString()}`);
     }
     updateDetailsSummary(store || null);
+
+    const shouldAutostartSession = ['1', 'true'].includes((params.get('autostartSession') || '').toLowerCase());
+    if (shouldAutostartSession && store) {
+      const nextParams = new URLSearchParams(window.location.search);
+      nextParams.delete('autostartSession');
+      const nextQuery = nextParams.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`);
+      setMobileTab('session');
+      if (activeStoreCanManagePhotos) {
+        startDefaultSession();
+      } else {
+        setSessionMessage('Only the store owner can start a session.', 'error');
+      }
+    }
   } catch (error) {
     linkedStores = [];
     updateSessionStorePicker();
@@ -1593,6 +1633,68 @@ if (storeForm && storeGrid) {
   loadStores();
 }
 
+const loadSessionRoutePage = async () => {
+  if (!sessionRouteGrid) {
+    return;
+  }
+
+  const currentUser = getSessionUser();
+  if (!currentUser) {
+    window.location.assign('/login');
+    return;
+  }
+
+  setSessionRouteMessage('Loading your stores...', '');
+  sessionRouteGrid.innerHTML = '';
+
+  try {
+    const response = await fetch(`/api/stores?owner=${encodeURIComponent(currentUser)}`);
+    if (!response.ok) {
+      setSessionRouteMessage('Unable to load stores right now.', 'error');
+      return;
+    }
+
+    const data = await response.json();
+    const stores = Array.isArray(data.stores) ? data.stores : [];
+    const manageableStores = stores.filter((store) => store && store.owner_email === currentUser);
+
+    if (!manageableStores.length) {
+      setSessionRouteMessage('Only the store owner can start a session.', 'error');
+      return;
+    }
+
+    if (manageableStores.length === 1) {
+      setSessionRouteMessage('Starting your session…', '');
+      redirectToSessionStore(manageableStores[0].id);
+      return;
+    }
+
+    setSessionRouteMessage('Choose a store to start a session.', '');
+    manageableStores.forEach((store) => {
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'store-tile';
+
+      const name = document.createElement('span');
+      name.className = 'store-name';
+      name.textContent = store.name || 'Unnamed store';
+
+      const location = document.createElement('span');
+      location.className = 'store-location';
+      location.textContent = store.location || '';
+
+      tile.appendChild(name);
+      tile.appendChild(location);
+      tile.addEventListener('click', () => {
+        redirectToSessionStore(store.id);
+      });
+      sessionRouteGrid.appendChild(tile);
+    });
+  } catch (error) {
+    setSessionRouteMessage('Unable to load stores right now.', 'error');
+  }
+};
+
 const renderAdminTagOptions = (container, selectedTags = []) => {
   if (!container) {
     return;
@@ -1779,6 +1881,7 @@ document.addEventListener('keydown', (event) => {
 
 loadStoreDetailsPage();
 loadAdminPage();
+loadSessionRoutePage();
 
 if (detailsPreviewImage) {
   detailsPreviewImage.addEventListener('click', () => {
