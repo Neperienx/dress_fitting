@@ -3,7 +3,7 @@
 Tablet-first, multi-tenant bridal shop experience for running “Bride Sessions” where brides swipe through dresses and receive a ranked Top 10 list.
 
 ## Prerequisites
-- Python 3.12+
+- Python 3.11+
 - macOS or Linux
 
 ## Quickstart (one line)
