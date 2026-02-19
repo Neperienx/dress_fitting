@@ -1255,7 +1255,22 @@ if (dressAutolabelButton) {
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        setDressMetadataMessage(errorData.error || 'Unable to autolabel this photo right now.', 'error');
+        const debug = errorData.debug || {};
+        const stage = debug.stage ? ` (stage: ${debug.stage})` : '';
+        const details = debug.reason || debug.details || debug.openai_error || '';
+        if (details) {
+          console.error('Autolabel failed', {
+            selectedStoreId,
+            selectedDressPhotoPath,
+            status: response.status,
+            error: errorData.error,
+            debug,
+          });
+        }
+        setDressMetadataMessage(
+          `${errorData.error || 'Unable to autolabel this photo right now.'}${stage}${details ? ` — ${details}` : ''}`,
+          'error'
+        );
         return;
       }
 
@@ -1280,7 +1295,12 @@ if (dressAutolabelButton) {
       );
       setDressMetadataMessage('Autolabel complete and tags saved.', 'success');
     } catch (error) {
-      setDressMetadataMessage('Unable to autolabel this photo right now.', 'error');
+      console.error('Autolabel request failed before completion', {
+        selectedStoreId,
+        selectedDressPhotoPath,
+        error,
+      });
+      setDressMetadataMessage(`Unable to autolabel this photo right now. ${error?.message ? `(${error.message})` : ''}`.trim(), 'error');
     } finally {
       dressAutolabelButton.disabled = !activeStoreCanManagePhotos;
     }
