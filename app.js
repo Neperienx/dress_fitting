@@ -85,6 +85,7 @@ let swipeLikes = [];
 let swipeDislikes = [];
 let rankedStoreDresses = [];
 let rankedStoreDressIndex = 0;
+let selectedTeamStoreId = '';
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
@@ -346,6 +347,7 @@ const renderTeamMembersForStore = (store) => {
   }
 
   const members = getLinkedStoreMembers(store);
+  selectedTeamStoreId = String(store.id || '');
   teamSelectedStore.textContent = `${store.name || 'Selected store'} team members`;
   teamMemberList.innerHTML = '';
 
@@ -384,6 +386,7 @@ const renderTeamStorePicker = () => {
 
   if (!linkedStores.length) {
     teamStorePicker.classList.add('is-hidden');
+    selectedTeamStoreId = '';
     renderTeamMembersForStore(null);
     setTeamMessage('No linked stores found for this account.', 'error');
     return;
@@ -391,6 +394,7 @@ const renderTeamStorePicker = () => {
 
   if (linkedStores.length === 1) {
     teamStorePicker.classList.add('is-hidden');
+    selectedTeamStoreId = String(linkedStores[0].id || '');
     renderTeamMembersForStore(linkedStores[0]);
     setTeamMessage('Showing all users linked to your store.', '');
     return;
@@ -398,7 +402,8 @@ const renderTeamStorePicker = () => {
 
   teamStorePicker.classList.remove('is-hidden');
   setTeamMessage('Select a store to view linked users.', '');
-  const selectedStoreFromDetails = linkedStores.find((store) => String(store.id) === String(selectedStoreId));
+  const preferredStoreId = selectedTeamStoreId;
+  const selectedStoreFromDetails = linkedStores.find((store) => String(store.id) === String(preferredStoreId));
   renderTeamMembersForStore(selectedStoreFromDetails || null);
 
   linkedStores.forEach((store) => {
@@ -417,9 +422,13 @@ const renderTeamStorePicker = () => {
 
     button.appendChild(name);
     button.appendChild(location);
+    const isSelected = String(store.id) === String(selectedTeamStoreId);
+    button.classList.toggle('is-selected', isSelected);
     button.addEventListener('click', () => {
+      selectedTeamStoreId = String(store.id || '');
       renderTeamMembersForStore(store);
-      setTeamMessage('', '');
+      setTeamMessage(`Showing users linked to ${store.name || 'this store'}.`, '');
+      renderTeamStorePicker();
     });
 
     teamStoreGrid.appendChild(button);
