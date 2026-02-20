@@ -963,8 +963,8 @@ def render_store_details(copy: dict) -> str:
       <div class="container store-details-page bridal-shell">
         <aside class="bridal-sidebar">
           <div class="bridal-sidebar-brand">
-            <span class="bridal-brand-badge">WL</span>
-            <span>{escape(copy.get("brandName") or "White Lace Bridal")}</span>
+            <span class="bridal-brand-badge" data-store-brand-badge>WL</span>
+            <span data-store-brand-name>{escape(copy.get("brandName") or "White Lace Bridal")}</span>
           </div>
           <nav class="bridal-sidebar-nav">
             <button class="bridal-nav-item is-active" type="button" data-mobile-tab="management">Dashboard</button>
@@ -982,7 +982,7 @@ def render_store_details(copy: dict) -> str:
               <h2>{escape(copy.get("title") or "Welcome back, Anna")}</h2>
             </div>
             <div class="bridal-topbar-actions">
-              <span class="bridal-pill">{escape(copy.get("brandName") or "White Lace Bridal")}</span>
+              <span class="bridal-pill" data-store-brand-name>{escape(copy.get("brandName") or "White Lace Bridal")}</span>
               <span class="bridal-avatar">👰</span>
             </div>
           </header>
@@ -999,10 +999,15 @@ def render_store_details(copy: dict) -> str:
               </section>
 
               <div class="bridal-card-row">
-                <div class="dashboard-panel bridal-mini-card">
+                <button
+                  class="dashboard-panel bridal-mini-card"
+                  type="button"
+                  data-open-inventory
+                  aria-label="Open inventory"
+                >
                   <h3>{escape(copy.get("galleryTitle") or "Manage Inventory")}</h3>
                   <p class="store-detail-location" data-store-details-photo-count>248 dresses available</p>
-                </div>
+                </button>
                 <div class="dashboard-panel bridal-mini-card">
                   <h3>{escape(copy.get("metadataTitle") or "Upload Studio Defaults")}</h3>
                   <p class="store-detail-location">10 reference photos set</p>
