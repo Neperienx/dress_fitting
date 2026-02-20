@@ -1009,7 +1009,7 @@ def render_store_details(copy: dict) -> str:
                 </div>
                 <div class="dashboard-panel bridal-mini-card">
                   <h3>Invite Team Members</h3>
-                  <p class="store-detail-location">5 active stylists</p>
+                  <p class="store-detail-location" data-store-details-stylist-count>0 active stylists</p>
                 </div>
               </div>
 
