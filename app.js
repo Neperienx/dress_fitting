@@ -1722,9 +1722,9 @@ if (storeForm && storeGrid) {
   const getCurrentUser = () => getSessionUser();
 
   const buildStoreTile = (store) => {
-    const tile = document.createElement('button');
+    const tile = document.createElement('a');
     tile.classList.add('store-tile');
-    tile.type = 'button';
+    tile.href = `/details?store=${encodeURIComponent(String(store.id || ''))}`;
     tile.dataset.name = store.name;
     tile.dataset.location = store.location;
     tile.dataset.manager = `Owner: ${store.owner_email}`;
@@ -1735,9 +1735,7 @@ if (storeForm && storeGrid) {
       .filter((photoPath) => typeof photoPath === 'string' && photoPath.trim());
     tile.dataset.photoUrls = JSON.stringify(photoUrls);
     tile.dataset.photoUrl = store.dress_photo_url || 'images/default-dress.svg';
-    if (store.id) {
-      tile.dataset.storeId = store.id;
-    }
+    tile.dataset.storeId = store.id ? String(store.id) : '';
 
     const nameSpan = document.createElement('span');
     nameSpan.classList.add('store-name');

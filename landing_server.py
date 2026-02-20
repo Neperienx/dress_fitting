@@ -832,9 +832,9 @@ def render_dashboard(copy: dict) -> str:
     for store in stores:
         store_tiles.append(
             """
-              <button
+              <a
                 class="store-tile"
-                type="button"
+                href="/details?store={store_id}"
                 data-name="{name}"
                 data-location="{location}"
                 data-manager="{manager}"
@@ -845,7 +845,7 @@ def render_dashboard(copy: dict) -> str:
               >
                 <span class="store-name">{name}</span>
                 <span class="store-location">{location}</span>
-              </button>
+              </a>
             """.format(
                 name=escape(store.get("name")),
                 location=escape(store.get("location")),
