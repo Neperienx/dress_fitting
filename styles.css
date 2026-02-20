@@ -758,6 +758,18 @@ h1 {
   min-height: 120px;
 }
 
+[data-open-inventory] {
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font: inherit;
+}
+
+[data-open-inventory]:focus-visible {
+  outline: 3px solid rgba(139, 76, 112, 0.35);
+  outline-offset: 2px;
+}
+
 .bridal-form-grid {
   display: grid;
   gap: 1rem;

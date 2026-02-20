@@ -6,6 +6,9 @@ const detailsStylistCount = document.querySelector('[data-store-details-stylist-
 const detailsOwner = document.querySelector('[data-store-details-owner]');
 const detailsInviteCode = document.querySelector('[data-store-details-invite]');
 const detailsCreatedAt = document.querySelector('[data-store-details-created]');
+const storeBrandNames = Array.from(document.querySelectorAll('[data-store-brand-name]'));
+const storeBrandBadge = document.querySelector('[data-store-brand-badge]');
+const openInventoryButton = document.querySelector('[data-open-inventory]');
 const detailsPreviewImage = document.querySelector('[data-dress-preview-image]');
 const detailMiniatures = document.querySelector('[data-dress-miniatures]');
 const dressPhotoForm = document.querySelector('[data-dress-photo-form]');
@@ -87,6 +90,25 @@ let rankedStoreDressIndex = 0;
 let selectedTeamStoreId = '';
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
+
+const updateStoreBranding = (store) => {
+  if (!storeBrandNames.length) {
+    return;
+  }
+  const brandName = (store?.name || 'Store').trim() || 'Store';
+  storeBrandNames.forEach((element) => {
+    element.textContent = brandName;
+  });
+  if (storeBrandBadge) {
+    const initials = brandName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('');
+    storeBrandBadge.textContent = initials || 'ST';
+  }
+};
 
 const closePhotoLightbox = () => {
   if (!photoLightbox) {
@@ -246,6 +268,12 @@ if (mobileTabButtons.length && mobilePanels.length) {
     });
   });
   setMobileTab('management');
+}
+
+if (openInventoryButton) {
+  openInventoryButton.addEventListener('click', () => {
+    setMobileTab('inventory');
+  });
 }
 
 const getActiveLocale = () => (document.documentElement?.lang || 'en').trim().toLowerCase() || 'en';
@@ -1137,6 +1165,7 @@ const updateDetailsSummary = (store) => {
     return;
   }
   if (!store) {
+    updateStoreBranding(null);
     detailsName.textContent = 'Store not found. Return to Stores and choose a store again.';
     detailsAddress.textContent = '';
     detailsPhotoCount.textContent = '';
@@ -1191,6 +1220,7 @@ const updateDetailsSummary = (store) => {
   const storeMembers = getLinkedStoreMembers(store);
   const currentUser = getSessionUser();
   activeStoreCanManagePhotos = Boolean(currentUser && store.owner_email === currentUser);
+  updateStoreBranding(store);
   detailsName.textContent = store.name || '';
   detailsAddress.textContent = store.location || '';
   detailsPhotoCount.textContent = `${dressPhotos.length} picture${dressPhotos.length === 1 ? '' : 's'}`;
