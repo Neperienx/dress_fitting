@@ -2,6 +2,7 @@ const storeGrid = document.querySelector('.store-grid');
 const detailsName = document.querySelector('[data-store-details-name]');
 const detailsAddress = document.querySelector('[data-store-details-address]');
 const detailsPhotoCount = document.querySelector('[data-store-details-photo-count]');
+const detailsStylistCount = document.querySelector('[data-store-details-stylist-count]');
 const detailsOwner = document.querySelector('[data-store-details-owner]');
 const detailsInviteCode = document.querySelector('[data-store-details-invite]');
 const detailsCreatedAt = document.querySelector('[data-store-details-created]');
@@ -1142,6 +1143,9 @@ const updateDetailsSummary = (store) => {
     if (detailsOwner) {
       detailsOwner.textContent = '';
     }
+    if (detailsStylistCount) {
+      detailsStylistCount.textContent = '';
+    }
     if (detailsInviteCode) {
       detailsInviteCode.textContent = '';
     }
@@ -1184,11 +1188,15 @@ const updateDetailsSummary = (store) => {
   }
 
   const dressPhotos = Array.isArray(store.dress_photos) ? store.dress_photos : [];
+  const storeMembers = getLinkedStoreMembers(store);
   const currentUser = getSessionUser();
   activeStoreCanManagePhotos = Boolean(currentUser && store.owner_email === currentUser);
   detailsName.textContent = store.name || '';
   detailsAddress.textContent = store.location || '';
   detailsPhotoCount.textContent = `${dressPhotos.length} picture${dressPhotos.length === 1 ? '' : 's'}`;
+  if (detailsStylistCount) {
+    detailsStylistCount.textContent = `${storeMembers.length} active stylist${storeMembers.length === 1 ? '' : 's'}`;
+  }
   if (detailsOwner) {
     detailsOwner.textContent = `Owner: ${store.owner_email || ''}`;
   }
