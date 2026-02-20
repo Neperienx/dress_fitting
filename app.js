@@ -66,6 +66,9 @@ const userMenuTrigger = document.querySelector('[data-user-menu-trigger]');
 const userMenuName = document.querySelector('[data-user-menu-name]');
 const userMenuPanel = document.querySelector('[data-user-menu-panel]');
 const logoutButton = document.querySelector('[data-auth-logout]');
+const settingsMenu = document.querySelector('[data-settings-menu]');
+const settingsMenuTrigger = document.querySelector('[data-settings-menu-trigger]');
+const settingsMenuPanel = document.querySelector('[data-settings-menu-panel]');
 const mobilePanels = Array.from(document.querySelectorAll('[data-mobile-panel]'));
 const mobileTabButtons = Array.from(document.querySelectorAll('[data-mobile-tab]'));
 
@@ -154,6 +157,13 @@ const closeUserMenu = () => {
   userMenuPanel.classList.add('is-hidden');
 };
 
+const closeSettingsMenu = () => {
+  if (!settingsMenuPanel) {
+    return;
+  }
+  settingsMenuPanel.classList.add('is-hidden');
+};
+
 const updateHeaderAuth = () => {
   const currentUser = getSessionUser();
   const isLoggedIn = Boolean(currentUser);
@@ -178,15 +188,26 @@ if (userMenuTrigger) {
       return;
     }
     userMenuPanel.classList.toggle('is-hidden');
+    closeSettingsMenu();
+  });
+}
+
+if (settingsMenuTrigger) {
+  settingsMenuTrigger.addEventListener('click', () => {
+    if (!settingsMenuPanel) {
+      return;
+    }
+    settingsMenuPanel.classList.toggle('is-hidden');
+    closeUserMenu();
   });
 }
 
 document.addEventListener('click', (event) => {
-  if (!userMenu) {
-    return;
-  }
-  if (!userMenu.contains(event.target)) {
+  if (userMenu && !userMenu.contains(event.target)) {
     closeUserMenu();
+  }
+  if (settingsMenu && !settingsMenu.contains(event.target)) {
+    closeSettingsMenu();
   }
 });
 
