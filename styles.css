@@ -63,6 +63,45 @@ a {
   justify-content: flex-end;
 }
 
+.settings-menu {
+  position: relative;
+}
+
+.settings-menu-trigger {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--primary);
+  font-size: 1.2rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.settings-menu-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  min-width: 180px;
+  padding: 0.7rem;
+  z-index: 20;
+}
+
+.settings-menu-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -82,9 +121,8 @@ a {
 }
 
 .language-switcher {
-  display: flex;
+  display: grid;
   gap: 0.4rem;
-  flex-wrap: wrap;
 }
 
 .language-switcher .language-link {

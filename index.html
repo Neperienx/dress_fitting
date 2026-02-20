@@ -20,7 +20,15 @@
           <span class="brand-name">Bridal Studio Sessions</span>
         </div>
         <div class="header-actions">
-          <nav class="language-switcher">$language_switcher</nav>
+          <div class="settings-menu" data-settings-menu>
+            <button class="settings-menu-trigger" type="button" aria-label="Open settings" data-settings-menu-trigger>
+              ⚙
+            </button>
+            <div class="settings-menu-panel is-hidden" data-settings-menu-panel>
+              <p class="settings-menu-label">Language</p>
+              <nav class="language-switcher">$language_switcher</nav>
+            </div>
+          </div>
           <a class="button secondary login-button" href="/stores">Stores</a>
           <a class="button login-button" href="/login" data-auth-login-link>Log in</a>
           <div class="user-menu is-hidden" data-user-menu>
