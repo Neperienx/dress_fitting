@@ -1,9 +1,4 @@
 const storeGrid = document.querySelector('.store-grid');
-const detailPanel = document.querySelector('.store-detail');
-const overviewName = document.querySelector('[data-store-overview-name]');
-const overviewAddress = document.querySelector('[data-store-overview-address]');
-const overviewPhotoCount = document.querySelector('[data-store-overview-photo-count]');
-const storeDetailsLink = document.querySelector('[data-store-details-link]');
 const detailsName = document.querySelector('[data-store-details-name]');
 const detailsAddress = document.querySelector('[data-store-details-address]');
 const detailsPhotoCount = document.querySelector('[data-store-details-photo-count]');
@@ -958,68 +953,18 @@ const setDressPhotoMessage = (message, type) => {
   }
 };
 
-const getStorePhotoUrlsFromTile = (tile) => {
-  if (!tile) {
-    return [];
-  }
-  const photoUrlsRaw = tile.dataset.photoUrls;
-  if (!photoUrlsRaw) {
-    return [];
-  }
-  try {
-    const parsed = JSON.parse(photoUrlsRaw);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch (error) {
-    // Ignore malformed payload.
-  }
-  return [];
-};
-
-const setOverviewStore = (tile) => {
-  if (!detailPanel || !overviewName || !overviewAddress || !overviewPhotoCount || !storeDetailsLink) {
-    return;
-  }
-
-  if (!tile) {
-    const emptyText = detailPanel.dataset.emptyText || 'Select a store to see details.';
-    overviewName.textContent = emptyText;
-    overviewAddress.textContent = '';
-    overviewPhotoCount.textContent = '';
-    storeDetailsLink.classList.add('is-disabled');
-    storeDetailsLink.setAttribute('aria-disabled', 'true');
-    storeDetailsLink.setAttribute('href', '#');
-    return;
-  }
-
-  const photoUrls = getStorePhotoUrlsFromTile(tile);
-  const photoCount = photoUrls.length;
-  overviewName.textContent = tile.dataset.name || '';
-  overviewAddress.textContent = tile.dataset.location || '';
-  overviewPhotoCount.textContent = `${photoCount} picture${photoCount === 1 ? '' : 's'}`;
-
-  const storeId = tile.dataset.storeId;
-  if (storeId) {
-    storeDetailsLink.classList.remove('is-disabled');
-    storeDetailsLink.setAttribute('aria-disabled', 'false');
-    storeDetailsLink.setAttribute('href', `/details?store=${encodeURIComponent(storeId)}`);
-  }
-};
-
 if (storeGrid) {
   storeGrid.addEventListener('click', (event) => {
     const tile = event.target.closest('.store-tile');
     if (!tile || tile.classList.contains('add-tile')) {
       return;
     }
-    setOverviewStore(tile);
+    const storeId = tile.dataset.storeId;
+    if (!storeId) {
+      return;
+    }
+    window.location.assign(`/details?store=${encodeURIComponent(storeId)}`);
   });
-}
-
-const initialStore = document.querySelector('.store-tile:not(.add-tile)');
-if (initialStore && overviewName) {
-  setOverviewStore(initialStore);
 }
 
 const setPreviewPhoto = (photoUrl) => {
@@ -1836,8 +1781,6 @@ if (storeForm && storeGrid) {
         return;
       }
       data.stores.forEach((store) => addStoreTile(store));
-      const firstLoadedStore = document.querySelector('.store-tile:not(.add-tile)');
-      setOverviewStore(firstLoadedStore);
     } catch (error) {
       // Ignore fetch errors for now.
     }
@@ -1870,10 +1813,7 @@ if (storeForm && storeGrid) {
         return;
       }
       const store = await response.json();
-      const tile = addStoreTile(store);
-      if (tile) {
-        setOverviewStore(tile);
-      }
+      addStoreTile(store);
       if (nameInput) {
         nameInput.value = '';
       }
@@ -1911,10 +1851,7 @@ if (storeForm && storeGrid) {
         return;
       }
       const store = await response.json();
-      const tile = addStoreTile(store);
-      if (tile) {
-        setOverviewStore(tile);
-      }
+      addStoreTile(store);
       if (joinCodeInput) {
         joinCodeInput.value = '';
       }

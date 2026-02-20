@@ -875,25 +875,6 @@ def render_dashboard(copy: dict) -> str:
             <h3>{escape(copy.get("storesTitle"))}</h3>
             <div class="store-grid">{tiles_html}</div>
           </div>
-          <div class="dashboard-panel detail-panel">
-            <h3>{escape(copy.get("detailTitle"))}</h3>
-            <div
-              class="store-detail"
-              data-empty-text="{escape(copy.get("detailEmpty"))}"
-            >
-              <p class="store-detail-name" data-store-overview-name>
-                {escape(copy.get("detailEmpty"))}
-              </p>
-              <p class="store-detail-location" data-store-overview-address></p>
-              <p class="store-detail-meta" data-store-overview-photo-count></p>
-              <a class="button secondary is-disabled" href="#" data-store-details-link>
-                {escape(copy.get("detailsButton") or "Go to store details")}
-              </a>
-              <a class="button" href="/session">
-                {escape(copy.get("sessionButton") or "Start Session")}
-              </a>
-            </div>
-          </div>
         </div>
         <div class="dashboard-actions">
           <div class="dashboard-panel" id="create-store">
