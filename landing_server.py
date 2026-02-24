@@ -1243,8 +1243,17 @@ def build_sections(content: dict, locale: str, page_id: str) -> str:
     sections = []
     default_locale = content.get("defaultLocale")
     page_blocks = content.get("pages", {}).get(page_id)
-    for block in content.get("blocks", []):
-        if page_blocks and block.get("id") not in page_blocks:
+    all_blocks = content.get("blocks", [])
+    if page_blocks:
+        block_lookup = {
+            block.get("id"): block for block in all_blocks if block.get("id")
+        }
+        blocks_to_render = [block_lookup.get(block_id) for block_id in page_blocks]
+    else:
+        blocks_to_render = all_blocks
+
+    for block in blocks_to_render:
+        if not block:
             continue
         copy = block.get("content", {}).get(locale) or block.get("content", {}).get(
             default_locale
