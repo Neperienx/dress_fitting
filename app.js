@@ -198,14 +198,15 @@ const renderStoreSwitcher = () => {
   }
 
   storeSwitcherMenu.innerHTML = '';
+  const hasStores = linkedStores.length > 0;
   const hasMultipleStores = linkedStores.length > 1;
-  storeSwitcher.classList.toggle('is-static', !hasMultipleStores);
+  storeSwitcher.classList.toggle('is-static', !hasStores);
 
   if (storeSwitcherTrigger) {
-    storeSwitcherTrigger.disabled = !hasMultipleStores;
+    storeSwitcherTrigger.disabled = !hasStores;
   }
 
-  if (!hasMultipleStores) {
+  if (!hasStores) {
     closeStoreSwitcher();
     return;
   }
