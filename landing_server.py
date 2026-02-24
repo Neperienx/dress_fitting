@@ -968,10 +968,8 @@ def render_store_details(copy: dict) -> str:
           </div>
           <nav class="bridal-sidebar-nav">
             <button class="bridal-nav-item is-active" type="button" data-mobile-tab="management">Dashboard</button>
-            <button class="bridal-nav-item" type="button" data-mobile-tab="session">Start Session</button>
             <button class="bridal-nav-item" type="button" data-mobile-tab="inventory">Inventory</button>
-            <button class="bridal-nav-item" type="button" data-mobile-tab="team">Team &amp; Store</button>
-            <a class="bridal-nav-item" href="#">Studio Settings</a>
+            <button class="bridal-nav-item" type="button" data-mobile-tab="session">Start Session</button>
           </nav>
         </aside>
 
@@ -1182,9 +1180,8 @@ def render_store_details(copy: dict) -> str:
 
             <nav class="mobile-bottom-tabs" aria-label="Store workflow tabs">
               <button class="mobile-bottom-tab is-active" type="button" data-mobile-tab="management">Dashboard</button>
-              <button class="mobile-bottom-tab" type="button" data-mobile-tab="session">Start Session</button>
               <button class="mobile-bottom-tab" type="button" data-mobile-tab="inventory">Inventory</button>
-              <button class="mobile-bottom-tab" type="button" data-mobile-tab="team">Team</button>
+              <button class="mobile-bottom-tab" type="button" data-mobile-tab="session">Start Session</button>
             </nav>
           </div>
         </div>
