@@ -219,7 +219,9 @@ const renderStoreSwitcher = () => {
     const option = document.createElement('button');
     option.type = 'button';
     option.className = 'bridal-store-switcher-item';
-    option.textContent = store.name || `Store ${store.id}`;
+    const storeName = store.name || `Store ${store.id}`;
+    const storeLocation = (store.location || '').trim();
+    option.textContent = storeLocation ? `${storeName} — ${storeLocation}` : storeName;
     const storeId = String(store.id || '');
     option.classList.toggle('is-selected', storeId === String(selectedStoreId));
     option.addEventListener('click', () => {

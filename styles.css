@@ -659,6 +659,7 @@ h1 {
   position: sticky;
   top: 5.5rem;
   overflow: visible;
+  z-index: 30;
 }
 
 .bridal-sidebar-brand {
@@ -716,7 +717,9 @@ h1 {
   padding: 0.3rem;
   display: grid;
   gap: 0.25rem;
-  z-index: 40;
+  max-height: min(40vh, 22rem);
+  overflow-y: auto;
+  z-index: 50;
 }
 
 .bridal-store-switcher-item {
