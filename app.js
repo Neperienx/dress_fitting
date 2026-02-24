@@ -190,6 +190,9 @@ const closeStoreSwitcher = () => {
     return;
   }
   storeSwitcherMenu.classList.add('is-hidden');
+  if (storeSwitcherTrigger) {
+    storeSwitcherTrigger.setAttribute('aria-expanded', 'false');
+  }
 };
 
 const renderStoreSwitcher = () => {
@@ -204,6 +207,7 @@ const renderStoreSwitcher = () => {
 
   if (storeSwitcherTrigger) {
     storeSwitcherTrigger.disabled = !hasStores;
+    storeSwitcherTrigger.setAttribute('aria-expanded', 'false');
   }
 
   if (!hasStores) {
@@ -265,13 +269,24 @@ if (settingsMenuTrigger) {
 }
 
 if (storeSwitcherTrigger) {
-  storeSwitcherTrigger.addEventListener('click', () => {
+  storeSwitcherTrigger.addEventListener('click', (event) => {
     if (!storeSwitcherMenu || storeSwitcherTrigger.disabled) {
       return;
     }
+    event.stopPropagation();
     storeSwitcherMenu.classList.toggle('is-hidden');
+    storeSwitcherTrigger.setAttribute(
+      'aria-expanded',
+      storeSwitcherMenu.classList.contains('is-hidden') ? 'false' : 'true'
+    );
     closeUserMenu();
     closeSettingsMenu();
+  });
+}
+
+if (storeSwitcherMenu) {
+  storeSwitcherMenu.addEventListener('click', (event) => {
+    event.stopPropagation();
   });
 }
 
