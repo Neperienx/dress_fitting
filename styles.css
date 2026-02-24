@@ -22,6 +22,19 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#landing-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#landing-root > .section:last-child {
+  margin-top: auto;
 }
 
 img {
