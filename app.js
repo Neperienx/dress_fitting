@@ -8,6 +8,9 @@ const detailsInviteCode = document.querySelector('[data-store-details-invite]');
 const detailsCreatedAt = document.querySelector('[data-store-details-created]');
 const storeBrandNames = Array.from(document.querySelectorAll('[data-store-brand-name]'));
 const storeBrandBadge = document.querySelector('[data-store-brand-badge]');
+const storeSwitcher = document.querySelector('[data-store-switcher]');
+const storeSwitcherTrigger = document.querySelector('[data-store-switcher-trigger]');
+const storeSwitcherMenu = document.querySelector('[data-store-switcher-menu]');
 const openInventoryButton = document.querySelector('[data-open-inventory]');
 const detailsPreviewImage = document.querySelector('[data-dress-preview-image]');
 const detailMiniatures = document.querySelector('[data-dress-miniatures]');
@@ -182,6 +185,46 @@ const closeSettingsMenu = () => {
   settingsMenuPanel.classList.add('is-hidden');
 };
 
+const closeStoreSwitcher = () => {
+  if (!storeSwitcherMenu) {
+    return;
+  }
+  storeSwitcherMenu.classList.add('is-hidden');
+};
+
+const renderStoreSwitcher = () => {
+  if (!storeSwitcher || !storeSwitcherMenu) {
+    return;
+  }
+
+  storeSwitcherMenu.innerHTML = '';
+  const hasMultipleStores = linkedStores.length > 1;
+  storeSwitcher.classList.toggle('is-static', !hasMultipleStores);
+
+  if (storeSwitcherTrigger) {
+    storeSwitcherTrigger.disabled = !hasMultipleStores;
+  }
+
+  if (!hasMultipleStores) {
+    closeStoreSwitcher();
+    return;
+  }
+
+  linkedStores.forEach((store) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'bridal-store-switcher-item';
+    option.textContent = store.name || `Store ${store.id}`;
+    const storeId = String(store.id || '');
+    option.classList.toggle('is-selected', storeId === String(selectedStoreId));
+    option.addEventListener('click', () => {
+      activateStoreById(storeId);
+      closeStoreSwitcher();
+    });
+    storeSwitcherMenu.appendChild(option);
+  });
+};
+
 const updateHeaderAuth = () => {
   const currentUser = getSessionUser();
   const isLoggedIn = Boolean(currentUser);
@@ -220,12 +263,26 @@ if (settingsMenuTrigger) {
   });
 }
 
+if (storeSwitcherTrigger) {
+  storeSwitcherTrigger.addEventListener('click', () => {
+    if (!storeSwitcherMenu || storeSwitcherTrigger.disabled) {
+      return;
+    }
+    storeSwitcherMenu.classList.toggle('is-hidden');
+    closeUserMenu();
+    closeSettingsMenu();
+  });
+}
+
 document.addEventListener('click', (event) => {
   if (userMenu && !userMenu.contains(event.target)) {
     closeUserMenu();
   }
   if (settingsMenu && !settingsMenu.contains(event.target)) {
     closeSettingsMenu();
+  }
+  if (storeSwitcher && !storeSwitcher.contains(event.target)) {
+    closeStoreSwitcher();
   }
 });
 
@@ -944,6 +1001,7 @@ const activateStoreById = (storeId) => {
   }
   updateDetailsSummary(nextStore);
   updateSessionStorePicker();
+  renderStoreSwitcher();
   const params = new URLSearchParams(window.location.search);
   params.set('store', String(nextStore.id));
   const nextUrl = `${window.location.pathname}?${params.toString()}`;
@@ -1213,6 +1271,7 @@ const updateDetailsSummary = (store) => {
     activeStoreCanManagePhotos = false;
     renderDetailsGallery([], '');
     renderTeamStorePicker();
+    renderStoreSwitcher();
     return;
   }
 
@@ -1284,6 +1343,7 @@ const updateDetailsSummary = (store) => {
   }
   renderDetailsGallery(dressPhotos, String(store.id));
   renderTeamStorePicker();
+  renderStoreSwitcher();
 };
 
 const loadStoreDetailsPage = async () => {
@@ -1319,6 +1379,7 @@ const loadStoreDetailsPage = async () => {
     linkedStores = stores;
     updateSessionStorePicker();
     renderTeamStorePicker();
+    renderStoreSwitcher();
     const fallbackStoreId = stores.length ? String(stores[0].id) : '';
     const resolvedStoreId = requestedStoreId || fallbackStoreId;
     const store = stores.find((candidate) => String(candidate.id) === resolvedStoreId);
@@ -1346,6 +1407,7 @@ const loadStoreDetailsPage = async () => {
     linkedStores = [];
     updateSessionStorePicker();
     renderTeamStorePicker();
+    renderStoreSwitcher();
     updateDetailsSummary(null);
   }
 };
