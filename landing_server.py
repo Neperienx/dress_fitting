@@ -964,7 +964,13 @@ def render_store_details(copy: dict) -> str:
         <aside class="bridal-sidebar">
           <div class="bridal-sidebar-brand">
             <span class="bridal-brand-badge" data-store-brand-badge>WL</span>
-            <span data-store-brand-name>{escape(copy.get("brandName") or "White Lace Bridal")}</span>
+            <div class="bridal-store-switcher" data-store-switcher>
+              <button class="bridal-store-switcher-trigger" type="button" data-store-switcher-trigger>
+                <span data-store-brand-name>{escape(copy.get("brandName") or "White Lace Bridal")}</span>
+                <span class="bridal-store-switcher-caret" aria-hidden="true">▾</span>
+              </button>
+              <div class="bridal-store-switcher-menu is-hidden" data-store-switcher-menu></div>
+            </div>
           </div>
           <nav class="bridal-sidebar-nav">
             <button class="bridal-nav-item is-active" type="button" data-mobile-tab="management">Dashboard</button>

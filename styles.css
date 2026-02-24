@@ -666,6 +666,82 @@ h1 {
   gap: 0.65rem;
   font-weight: 700;
   margin-bottom: 1rem;
+  position: relative;
+}
+
+.bridal-store-switcher {
+  min-width: 0;
+  flex: 1;
+  position: relative;
+}
+
+.bridal-store-switcher-trigger {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.bridal-store-switcher-trigger > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.bridal-store-switcher-caret {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.bridal-store-switcher-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(40, 19, 31, 0.12);
+  padding: 0.3rem;
+  display: grid;
+  gap: 0.25rem;
+  z-index: 5;
+}
+
+.bridal-store-switcher-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  font: inherit;
+  color: #60495c;
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bridal-store-switcher-item:hover,
+.bridal-store-switcher-item.is-selected {
+  background: #f2e5ed;
+  color: #533148;
+}
+
+.bridal-store-switcher.is-static .bridal-store-switcher-trigger {
+  cursor: default;
+}
+
+.bridal-store-switcher.is-static .bridal-store-switcher-caret {
+  display: none;
 }
 
 .bridal-brand-badge {
