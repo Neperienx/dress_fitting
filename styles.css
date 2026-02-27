@@ -1173,7 +1173,8 @@ h1 {
   font-weight: 600;
 }
 
-.session-store-picker select {
+.session-store-picker select,
+.session-store-picker input {
   padding: 0.7rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--border);

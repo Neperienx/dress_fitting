@@ -1353,6 +1353,10 @@ def render_store_details(copy: dict) -> str:
                   For what store would you like to initiate a session?
                   <select data-session-store-select></select>
                 </label>
+                <label>
+                  Number of dresses in session
+                  <input type="number" min="1" step="1" value="10" data-session-dress-count />
+                </label>
                 <button class="button secondary" type="button" data-session-store-confirm>Use this store</button>
               </div>
               <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
