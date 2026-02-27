@@ -1807,9 +1807,10 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     json.dumps({"error": "dress_photo is required."}).encode("utf-8")
                 )
                 return
-            if dress_profile_id is None:
-                dress_profile_id = create_store_dress_profile(store_id)
             for upload in valid_uploads:
+                resolved_profile_id = dress_profile_id
+                if resolved_profile_id is None:
+                    resolved_profile_id = create_store_dress_profile(store_id)
                 content = upload.file.read() if upload.file else b""
                 if not content:
                     self.send_response(400)
@@ -1823,7 +1824,7 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     store_id,
                     upload.filename,
                     content,
-                    dress_profile_id=dress_profile_id,
+                    dress_profile_id=resolved_profile_id,
                 )
                 if not photo_path:
                     self.send_response(400)
