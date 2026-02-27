@@ -1233,7 +1233,8 @@ const closeProfileMergeModal = () => {
   profileMergeModal.classList.add('is-hidden');
 };
 
-const performDressPhotoUpload = async (files, profileId) => {
+const performDressPhotoUpload = async (files, profileId, options = {}) => {
+  const { fallbackToSelectedProfile = true } = options;
   const storeId = dressPhotoForm?.dataset.storeId;
   if (!storeId) {
     setDressPhotoMessage('Select a store first.', 'error');
@@ -1252,7 +1253,7 @@ const performDressPhotoUpload = async (files, profileId) => {
 
   try {
     formData.append('owner_email', getSessionUser());
-    const resolvedProfileId = profileId || selectedDressProfileId;
+    const resolvedProfileId = profileId || (fallbackToSelectedProfile ? selectedDressProfileId : '');
     if (resolvedProfileId) {
       formData.append('dress_profile_id', resolvedProfileId);
     }
@@ -1814,7 +1815,7 @@ if (dressPhotoForm) {
   dressPhotoForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const files = Array.from(dressPhotoInput?.files || []).filter(Boolean);
-    await performDressPhotoUpload(files, '');
+    await performDressPhotoUpload(files, '', { fallbackToSelectedProfile: false });
   });
 }
 
