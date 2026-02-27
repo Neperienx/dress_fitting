@@ -1793,7 +1793,12 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     ).encode("utf-8")
                 )
                 return
-            upload_items = uploads if isinstance(uploads, list) else [uploads] if uploads else []
+            if isinstance(uploads, list):
+                upload_items = uploads
+            elif uploads is not None:
+                upload_items = [uploads]
+            else:
+                upload_items = []
             valid_uploads = [
                 upload
                 for upload in upload_items
