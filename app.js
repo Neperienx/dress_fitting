@@ -37,6 +37,7 @@ const startSessionButton = document.querySelector('[data-start-session-button]')
 const sessionMessage = document.querySelector('[data-session-message]');
 const sessionStorePicker = document.querySelector('[data-session-store-picker]');
 const sessionStoreSelect = document.querySelector('[data-session-store-select]');
+const sessionDressCountInput = document.querySelector('[data-session-dress-count]');
 const sessionStoreConfirm = document.querySelector('[data-session-store-confirm]');
 const teamStorePicker = document.querySelector('[data-team-store-picker]');
 const teamStoreGrid = document.querySelector('[data-team-store-grid]');
@@ -103,6 +104,7 @@ let rankedStoreDresses = [];
 let rankedStoreDressIndex = 0;
 let rankedStoreDressPhotoIndex = 0;
 let selectedTeamStoreId = '';
+const DEFAULT_SESSION_DRESS_COUNT = 10;
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
@@ -624,6 +626,20 @@ const setAdminMessage = (message, type) => {
   }
 };
 
+const parseSessionDressCount = () => {
+  const rawValue = Number.parseInt((sessionDressCountInput?.value || '').trim(), 10);
+  if (!Number.isFinite(rawValue) || rawValue <= 0) {
+    if (sessionDressCountInput) {
+      sessionDressCountInput.value = String(DEFAULT_SESSION_DRESS_COUNT);
+    }
+    return DEFAULT_SESSION_DRESS_COUNT;
+  }
+  if (sessionDressCountInput) {
+    sessionDressCountInput.value = String(rawValue);
+  }
+  return rawValue;
+};
+
 const normalizeToken = (value) =>
   (value || '')
     .toString()
@@ -664,6 +680,115 @@ const resolvePhotoCategory = (photoPath, tagToCategoryMap, fallbackCategories = 
     return fallbackCategories[numericSeed % fallbackCategories.length];
   }
   return 'General Style';
+};
+
+const buildInventorySessionCandidates = (store) => {
+  const dressPhotos = Array.isArray(store?.dress_photos) ? store.dress_photos : [];
+  const profileMap = new Map();
+
+  dressPhotos.forEach((photo) => {
+    const profileId = String(photo?.dress_profile_id || photo?.photo_path || '');
+    if (!profileId || !photo?.photo_path) {
+      return;
+    }
+    if (!profileMap.has(profileId)) {
+      profileMap.set(profileId, {
+        profileId,
+        coverPhotoPath: photo.photo_path,
+        tags: new Set(),
+      });
+    }
+    const profile = profileMap.get(profileId);
+    (Array.isArray(photo.tags) ? photo.tags : []).forEach((tag) => {
+      if (typeof tag === 'string' && tag.trim()) {
+        profile.tags.add(tag.trim());
+      }
+    });
+  });
+
+  return Array.from(profileMap.values()).map((profile) => ({
+    profileId: profile.profileId,
+    coverPhotoPath: profile.coverPhotoPath,
+    tags: Array.from(profile.tags),
+  }));
+};
+
+const selectProfilesForTagVariety = (profiles, limit) => {
+  const remaining = [...profiles];
+  const selected = [];
+  const coveredTags = new Set();
+
+  while (selected.length < limit && remaining.length) {
+    remaining.sort((first, second) => {
+      const firstGain = first.tags.reduce((count, tag) => count + (coveredTags.has(normalizeToken(tag)) ? 0 : 1), 0);
+      const secondGain = second.tags.reduce((count, tag) => count + (coveredTags.has(normalizeToken(tag)) ? 0 : 1), 0);
+      if (secondGain !== firstGain) {
+        return secondGain - firstGain;
+      }
+      if (second.tags.length !== first.tags.length) {
+        return second.tags.length - first.tags.length;
+      }
+      return first.coverPhotoPath.localeCompare(second.coverPhotoPath);
+    });
+
+    const next = remaining.shift();
+    if (!next) {
+      break;
+    }
+
+    selected.push(next);
+    next.tags.forEach((tag) => {
+      const normalized = normalizeToken(tag);
+      if (normalized) {
+        coveredTags.add(normalized);
+      }
+    });
+  }
+
+  return selected;
+};
+
+const loadDefaultSessionDeck = async (limit, tagMap, fallbackCategories) => {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const response = await fetch('/api/default-dress-photos');
+  if (!response.ok) {
+    throw new Error('Unable to load default dress photos.');
+  }
+  const data = await response.json();
+  const photos = Array.isArray(data.photos) ? data.photos : [];
+  if (!photos.length) {
+    return [];
+  }
+
+  let metadataByPhoto = new Map();
+  try {
+    const metadataResponse = await fetch('/api/default-dress-metadata');
+    if (metadataResponse.ok) {
+      const metadataPayload = await metadataResponse.json();
+      const metadataRows = Array.isArray(metadataPayload.photos) ? metadataPayload.photos : [];
+      metadataByPhoto = new Map(
+        metadataRows.map((row) => [row.photo_path, Array.isArray(row.tags) ? row.tags : []])
+      );
+    }
+  } catch (error) {
+    // Fallback to filename heuristics.
+  }
+
+  return photos.slice(0, limit).map((photoPath) => {
+    const tags = metadataByPhoto.get(photoPath) || [];
+    const categoryFromTag = tags
+      .map((tag) => tagMap.get(normalizeToken(tag)))
+      .find((value) => Boolean(value));
+    return {
+      photoPath,
+      fileName: photoPath.split('/').pop() || photoPath,
+      tags,
+      category: categoryFromTag || resolvePhotoCategory(photoPath, tagMap, fallbackCategories),
+    };
+  });
 };
 
 const renderSwipeCard = () => {
@@ -982,7 +1107,7 @@ const handleSwipe = (direction) => {
   renderSwipeCard();
 };
 
-const startDefaultSession = async () => {
+const startDefaultSession = async (requestedDressCount = DEFAULT_SESSION_DRESS_COUNT) => {
   if (!activeStoreCanManagePhotos) {
     setSessionMessage('Only the store owner can start a session.', 'error');
     return;
@@ -992,46 +1117,40 @@ const startDefaultSession = async () => {
   await loadTagOptions();
 
   try {
-    const response = await fetch('/api/default-dress-photos');
-    if (!response.ok) {
-      setSessionMessage('Unable to load default dress photos.', 'error');
+    const dressCount = Number.isFinite(requestedDressCount) && requestedDressCount > 0
+      ? requestedDressCount
+      : DEFAULT_SESSION_DRESS_COUNT;
+    const activeStore = linkedStores.find((store) => String(store.id) === String(selectedStoreId));
+    if (!activeStore) {
+      setSessionMessage('Unable to load this store inventory right now.', 'error');
       return;
-    }
-    const data = await response.json();
-    const photos = Array.isArray(data.photos) ? data.photos : [];
-    if (!photos.length) {
-      setSessionMessage('No default photos were found.', 'error');
-      return;
-    }
-
-    let metadataByPhoto = new Map();
-    try {
-      const metadataResponse = await fetch('/api/default-dress-metadata');
-      if (metadataResponse.ok) {
-        const metadataPayload = await metadataResponse.json();
-        const metadataRows = Array.isArray(metadataPayload.photos) ? metadataPayload.photos : [];
-        metadataByPhoto = new Map(
-          metadataRows.map((row) => [row.photo_path, Array.isArray(row.tags) ? row.tags : []])
-        );
-      }
-    } catch (error) {
-      // Fallback to filename heuristics.
     }
 
     const tagMap = buildTagToCategoryMap();
     const fallbackCategories = Array.from(new Set(Array.from(tagMap.values())));
-    swipeDeck = photos.map((photoPath) => {
-      const tags = metadataByPhoto.get(photoPath) || [];
+    const inventoryCandidates = buildInventorySessionCandidates(activeStore);
+    const selectedInventory = selectProfilesForTagVariety(inventoryCandidates, dressCount);
+    const inventoryDeck = selectedInventory.map((profile) => {
+      const tags = Array.isArray(profile.tags) ? profile.tags : [];
       const categoryFromTag = tags
         .map((tag) => tagMap.get(normalizeToken(tag)))
         .find((value) => Boolean(value));
       return {
-        photoPath,
-        fileName: photoPath.split('/').pop() || photoPath,
+        photoPath: profile.coverPhotoPath,
+        fileName: profile.coverPhotoPath.split('/').pop() || profile.coverPhotoPath,
         tags,
-        category: categoryFromTag || resolvePhotoCategory(photoPath, tagMap, fallbackCategories),
+        category: categoryFromTag || resolvePhotoCategory(profile.coverPhotoPath, tagMap, fallbackCategories),
       };
     });
+
+    const missingCount = Math.max(0, dressCount - inventoryDeck.length);
+    const defaultDeck = await loadDefaultSessionDeck(missingCount, tagMap, fallbackCategories);
+    swipeDeck = [...inventoryDeck, ...defaultDeck];
+    if (!swipeDeck.length) {
+      setSessionMessage('No dresses were found for this session.', 'error');
+      return;
+    }
+
     swipeIndex = 0;
     swipeLikes = [];
     swipeDislikes = [];
@@ -1047,7 +1166,11 @@ const startDefaultSession = async () => {
     }
     setSessionResultsTab('insights');
     renderSwipeCard();
-    setSessionMessage('Swipe right for like and left for dislike. You can also use arrow keys.', '');
+    if (defaultDeck.length) {
+      setSessionMessage(`Loaded ${inventoryDeck.length} inventory dresses and ${defaultDeck.length} default looks. Swipe right for like and left for dislike.`, '');
+    } else {
+      setSessionMessage('Loaded inventory looks with maximum tag variety. Swipe right for like and left for dislike.', '');
+    }
   } catch (error) {
     setSessionMessage('Unable to start this session right now.', 'error');
   }
@@ -1080,7 +1203,7 @@ const handleStartSession = () => {
 
   if (manageableStores.length === 1) {
     activateStoreById(manageableStores[0].id);
-    startDefaultSession();
+    startDefaultSession(parseSessionDressCount());
     return;
   }
 
@@ -1673,7 +1796,7 @@ const loadStoreDetailsPage = async () => {
       window.history.replaceState({}, '', `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`);
       setMobileTab('session');
       if (activeStoreCanManagePhotos) {
-        startDefaultSession();
+        startDefaultSession(parseSessionDressCount());
       } else {
         setSessionMessage('Only the store owner can start a session.', 'error');
       }
@@ -2447,8 +2570,12 @@ if (sessionStoreConfirm) {
       setSessionMessage('Unable to load this store. Please choose another one.', 'error');
       return;
     }
-    startDefaultSession();
+    startDefaultSession(parseSessionDressCount());
   });
+}
+
+if (sessionDressCountInput && !sessionDressCountInput.value) {
+  sessionDressCountInput.value = String(DEFAULT_SESSION_DRESS_COUNT);
 }
 
 if (dislikeButton) {
