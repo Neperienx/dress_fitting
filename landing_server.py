@@ -40,6 +40,7 @@ DEFAULT_SESSION_EXTENSIONS = {
 
 def init_db() -> None:
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS stores (
@@ -102,14 +103,35 @@ def init_db() -> None:
         )
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS store_dress_photos (
+            CREATE TABLE IF NOT EXISTS store_dress_profiles (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               store_id INTEGER NOT NULL,
-              photo_path TEXT NOT NULL,
               price REAL,
               tags_json TEXT,
               created_at TEXT NOT NULL,
               FOREIGN KEY(store_id) REFERENCES stores(id)
+            )
+            """
+        )
+        profile_columns = conn.execute("PRAGMA table_info(store_dress_profiles)").fetchall()
+        profile_column_names = {column[1] for column in profile_columns}
+        if "price" not in profile_column_names:
+            conn.execute("ALTER TABLE store_dress_profiles ADD COLUMN price REAL")
+        if "tags_json" not in profile_column_names:
+            conn.execute("ALTER TABLE store_dress_profiles ADD COLUMN tags_json TEXT")
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS store_dress_photos (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              store_id INTEGER NOT NULL,
+              dress_profile_id INTEGER,
+              photo_path TEXT NOT NULL,
+              price REAL,
+              tags_json TEXT,
+              created_at TEXT NOT NULL,
+              FOREIGN KEY(store_id) REFERENCES stores(id),
+              FOREIGN KEY(dress_profile_id) REFERENCES store_dress_profiles(id)
             )
             """
         )
@@ -119,6 +141,38 @@ def init_db() -> None:
             conn.execute("ALTER TABLE store_dress_photos ADD COLUMN price REAL")
         if "tags_json" not in photo_column_names:
             conn.execute("ALTER TABLE store_dress_photos ADD COLUMN tags_json TEXT")
+        if "dress_profile_id" not in photo_column_names:
+            conn.execute("ALTER TABLE store_dress_photos ADD COLUMN dress_profile_id INTEGER")
+
+        existing_profile_ids = {
+            row[0]
+            for row in conn.execute("SELECT id FROM store_dress_profiles").fetchall()
+        }
+        legacy_rows = conn.execute(
+            """
+            SELECT id, store_id, price, tags_json, created_at, dress_profile_id
+            FROM store_dress_photos
+            ORDER BY created_at ASC, id ASC
+            """
+        ).fetchall()
+        for row in legacy_rows:
+            photo_id, store_id, price, tags_json, created_at, dress_profile_id = row
+            if dress_profile_id and dress_profile_id in existing_profile_ids:
+                continue
+            profile_created_at = created_at or datetime.now(timezone.utc).isoformat()
+            profile_cursor = conn.execute(
+                """
+                INSERT INTO store_dress_profiles (store_id, price, tags_json, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (store_id, price, tags_json, profile_created_at),
+            )
+            profile_id = profile_cursor.lastrowid
+            existing_profile_ids.add(profile_id)
+            conn.execute(
+                "UPDATE store_dress_photos SET dress_profile_id = ? WHERE id = ?",
+                (profile_id, photo_id),
+            )
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS default_dress_metadata (
@@ -241,10 +295,14 @@ def parse_tags(raw_tags: str | None) -> list[str]:
 def fetch_store_dress_photos(conn: sqlite3.Connection, store_id: int) -> list[dict]:
     rows = conn.execute(
         """
-        SELECT photo_path, price, tags_json
+        SELECT store_dress_photos.photo_path,
+               COALESCE(store_dress_profiles.price, store_dress_photos.price) AS price,
+               COALESCE(store_dress_profiles.tags_json, store_dress_photos.tags_json) AS tags_json,
+               store_dress_photos.dress_profile_id
         FROM store_dress_photos
-        WHERE store_id = ?
-        ORDER BY created_at DESC, id DESC
+        LEFT JOIN store_dress_profiles ON store_dress_profiles.id = store_dress_photos.dress_profile_id
+        WHERE store_dress_photos.store_id = ?
+        ORDER BY store_dress_photos.created_at DESC, store_dress_photos.id DESC
         """,
         (store_id,),
     ).fetchall()
@@ -255,9 +313,53 @@ def fetch_store_dress_photos(conn: sqlite3.Connection, store_id: int) -> list[di
                 "photo_path": row[0],
                 "price": row[1],
                 "tags": parse_tags(row[2]),
+                "dress_profile_id": row[3],
             }
         )
     return photos
+
+
+def fetch_store_dress_profiles(conn: sqlite3.Connection, store_id: int) -> list[dict]:
+    profile_rows = conn.execute(
+        """
+        SELECT id, price, tags_json, created_at
+        FROM store_dress_profiles
+        WHERE store_id = ?
+        ORDER BY created_at DESC, id DESC
+        """,
+        (store_id,),
+    ).fetchall()
+    photos_by_profile: dict[int, list[str]] = {}
+    photo_rows = conn.execute(
+        """
+        SELECT dress_profile_id, photo_path
+        FROM store_dress_photos
+        WHERE store_id = ?
+        ORDER BY created_at DESC, id DESC
+        """,
+        (store_id,),
+    ).fetchall()
+    for dress_profile_id, photo_path in photo_rows:
+        if not dress_profile_id:
+            continue
+        photos_by_profile.setdefault(dress_profile_id, []).append(photo_path)
+    profiles = []
+    for profile_id, price, tags_json, created_at in profile_rows:
+        photos = photos_by_profile.get(profile_id, [])
+        if not photos:
+            continue
+        profiles.append(
+            {
+                "id": profile_id,
+                "price": price,
+                "tags": parse_tags(tags_json),
+                "created_at": created_at,
+                "photo_paths": photos,
+                "primary_photo_path": photos[0],
+                "photo_count": len(photos),
+            }
+        )
+    return profiles
 
 
 def fetch_store_team_members(
@@ -301,6 +403,7 @@ def fetch_stores(user_email: str) -> list[dict]:
         for row in rows:
             store = dict(row)
             store["dress_photos"] = fetch_store_dress_photos(conn, store["id"])
+            store["dress_profiles"] = fetch_store_dress_profiles(conn, store["id"])
             store["team_members"] = fetch_store_team_members(
                 conn, store["id"], store.get("owner_email") or ""
             )
@@ -362,13 +465,18 @@ def join_store(invite_code: str, member_email: str) -> dict | None:
         normalized_store["dress_photos"] = fetch_store_dress_photos(
             conn, normalized_store["id"]
         )
+        normalized_store["dress_profiles"] = fetch_store_dress_profiles(
+            conn, normalized_store["id"]
+        )
         normalized_store["team_members"] = fetch_store_team_members(
             conn, normalized_store["id"], normalized_store.get("owner_email") or ""
         )
     return normalize_store_payload(normalized_store)
 
 
-def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str | None:
+def save_store_dress_photo(
+    store_id: int, filename: str, content: bytes, dress_profile_id: int | None = None
+) -> str | None:
     extension = Path(filename).suffix.lower()
     if extension not in ALLOWED_DRESS_EXTENSIONS:
         return None
@@ -380,12 +488,23 @@ def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str 
     full_path.write_bytes(content)
     created_at = datetime.now(timezone.utc).isoformat()
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        resolved_profile_id = dress_profile_id
+        if resolved_profile_id is not None:
+            existing_profile = conn.execute(
+                "SELECT id FROM store_dress_profiles WHERE id = ? AND store_id = ?",
+                (resolved_profile_id, store_id),
+            ).fetchone()
+            if not existing_profile:
+                return None
+        if resolved_profile_id is None:
+            return None
         conn.execute(
             """
-            INSERT INTO store_dress_photos (store_id, photo_path, created_at)
-            VALUES (?, ?, ?)
+            INSERT INTO store_dress_photos (store_id, dress_profile_id, photo_path, created_at)
+            VALUES (?, ?, ?, ?)
             """,
-            (store_id, str(relative_path), created_at),
+            (store_id, resolved_profile_id, str(relative_path), created_at),
         )
         conn.execute(
             "UPDATE stores SET dress_photo_path = ? WHERE id = ?",
@@ -394,11 +513,35 @@ def save_store_dress_photo(store_id: int, filename: str, content: bytes) -> str 
     return str(relative_path)
 
 
+def create_store_dress_profile(store_id: int) -> int:
+    created_at = datetime.now(timezone.utc).isoformat()
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO store_dress_profiles (store_id, created_at)
+            VALUES (?, ?)
+            """,
+            (store_id, created_at),
+        )
+    return int(cursor.lastrowid)
+
+
 def remove_store_dress_photo(store_id: int, photo_path: str) -> bool:
     normalized_photo_path = (photo_path or "").strip()
     if not normalized_photo_path:
         return False
     with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            """
+            SELECT id, dress_profile_id
+            FROM store_dress_photos
+            WHERE store_id = ? AND photo_path = ?
+            """,
+            (store_id, normalized_photo_path),
+        ).fetchone()
+        if not row:
+            return False
+        _, dress_profile_id = row
         deleted = conn.execute(
             """
             DELETE FROM store_dress_photos
@@ -408,6 +551,13 @@ def remove_store_dress_photo(store_id: int, photo_path: str) -> bool:
         )
         if deleted.rowcount < 1:
             return False
+        if dress_profile_id:
+            remaining_count = conn.execute(
+                "SELECT COUNT(1) FROM store_dress_photos WHERE dress_profile_id = ?",
+                (dress_profile_id,),
+            ).fetchone()[0]
+            if remaining_count == 0:
+                conn.execute("DELETE FROM store_dress_profiles WHERE id = ?", (dress_profile_id,))
         latest_photo_row = conn.execute(
             """
             SELECT photo_path
@@ -444,6 +594,7 @@ def fetch_store_by_id(store_id: int) -> dict | None:
             return None
         payload = dict(store)
         payload["dress_photos"] = fetch_store_dress_photos(conn, store_id)
+        payload["dress_profiles"] = fetch_store_dress_profiles(conn, store_id)
         payload["team_members"] = fetch_store_team_members(
             conn, store_id, payload.get("owner_email") or ""
         )
@@ -458,6 +609,36 @@ def update_store_dress_photo_metadata(
         return False
     tags_json = json.dumps(tags)
     with sqlite3.connect(DB_PATH) as conn:
+        profile_row = conn.execute(
+            """
+            SELECT dress_profile_id
+            FROM store_dress_photos
+            WHERE store_id = ? AND photo_path = ?
+            """,
+            (store_id, normalized_photo_path),
+        ).fetchone()
+        if not profile_row:
+            return False
+        dress_profile_id = profile_row[0]
+        if dress_profile_id:
+            result = conn.execute(
+                """
+                UPDATE store_dress_profiles
+                SET price = ?, tags_json = ?
+                WHERE id = ? AND store_id = ?
+                """,
+                (price, tags_json, dress_profile_id, store_id),
+            )
+            if result.rowcount > 0:
+                conn.execute(
+                    """
+                    UPDATE store_dress_photos
+                    SET price = ?, tags_json = ?
+                    WHERE store_id = ? AND dress_profile_id = ?
+                    """,
+                    (price, tags_json, store_id, dress_profile_id),
+                )
+                return True
         result = conn.execute(
             """
             UPDATE store_dress_photos
@@ -1444,11 +1625,28 @@ class LandingHandler(SimpleHTTPRequestHandler):
                 },
             )
             uploads = form["dress_photo"] if "dress_photo" in form else None
+            raw_dress_profile_id = (
+                form["dress_profile_id"].value.strip()
+                if "dress_profile_id" in form and getattr(form["dress_profile_id"], "value", "")
+                else ""
+            )
             owner_email = (
                 form["owner_email"].value.strip().lower()
                 if "owner_email" in form and getattr(form["owner_email"], "value", "")
                 else ""
             )
+            dress_profile_id = None
+            if raw_dress_profile_id:
+                try:
+                    dress_profile_id = int(raw_dress_profile_id)
+                except ValueError:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(
+                        json.dumps({"error": "dress_profile_id must be an integer."}).encode("utf-8")
+                    )
+                    return
             if owner_email != (store.get("owner_email") or "").strip().lower():
                 self.send_response(403)
                 self.send_header("Content-Type", "application/json")
@@ -1473,6 +1671,8 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     json.dumps({"error": "dress_photo is required."}).encode("utf-8")
                 )
                 return
+            if dress_profile_id is None:
+                dress_profile_id = create_store_dress_profile(store_id)
             for upload in valid_uploads:
                 content = upload.file.read() if upload.file else b""
                 if not content:
@@ -1483,7 +1683,12 @@ class LandingHandler(SimpleHTTPRequestHandler):
                         json.dumps({"error": "Uploaded file is empty."}).encode("utf-8")
                     )
                     return
-                photo_path = save_store_dress_photo(store_id, upload.filename, content)
+                photo_path = save_store_dress_photo(
+                    store_id,
+                    upload.filename,
+                    content,
+                    dress_profile_id=dress_profile_id,
+                )
                 if not photo_path:
                     self.send_response(400)
                     self.send_header("Content-Type", "application/json")
@@ -1491,7 +1696,7 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(
                         json.dumps(
                             {
-                                "error": "Only .png, .jpg, .jpeg, and .webp files are supported.",
+                                "error": "Upload failed. Use .png/.jpg/.jpeg/.webp and verify dress_profile_id belongs to this store.",
                             }
                         ).encode("utf-8")
                     )

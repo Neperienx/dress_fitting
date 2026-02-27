@@ -549,11 +549,24 @@ h1 {
 }
 
 .store-miniature-button {
+  position: relative;
   border: 1px solid var(--border);
   background: #fff;
   border-radius: 10px;
   padding: 0.2rem;
   cursor: pointer;
+}
+
+.dress-photo-count-badge {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.4rem;
+  background: rgba(25, 16, 22, 0.76);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.12rem 0.4rem;
+  font-size: 0.66rem;
+  font-weight: 600;
 }
 
 .store-miniature-button.is-selected {

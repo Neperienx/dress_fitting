@@ -78,6 +78,7 @@ let photoLightbox = null;
 let photoLightboxImage = null;
 let selectedPreviewPhotoUrl = '';
 let selectedDressPhotoPath = '';
+let selectedDressProfileId = '';
 let selectedStoreId = '';
 let activeStoreCanManagePhotos = false;
 let currentDressPhotos = [];
@@ -1106,6 +1107,14 @@ const removeDressPhoto = async (storeId, photoUrl) => {
     }
     const store = await response.json();
     updateDetailsSummary(store);
+    if (selectedDressProfileId) {
+      const refreshedPhoto = (Array.isArray(store?.dress_photos) ? store.dress_photos : []).find(
+        (photo) => String(photo.dress_profile_id || '') === String(selectedDressProfileId)
+      );
+      if (refreshedPhoto?.photo_path) {
+        selectDressPhoto(refreshedPhoto.photo_path);
+      }
+    }
     setDressPhotoMessage('Photo removed.', 'success');
   } catch (error) {
     setDressPhotoMessage('Unable to remove this photo right now.', 'error');
@@ -1167,6 +1176,7 @@ const selectDressPhoto = (photoPath) => {
   selectedDressPhotoPath = photoPath || '';
   setPreviewPhoto(photoPath || '');
   const selectedPhoto = getCurrentDressPhoto();
+  selectedDressProfileId = selectedPhoto?.dress_profile_id ? String(selectedPhoto.dress_profile_id) : '';
   if (dressPriceInput) {
     dressPriceInput.value = selectedPhoto && typeof selectedPhoto.price === 'number' ? selectedPhoto.price : '';
   }
@@ -1181,9 +1191,26 @@ const renderDetailsGallery = (dressPhotos, storeId) => {
   const safePhotos = Array.isArray(dressPhotos) ? dressPhotos : [];
   currentDressPhotos = safePhotos;
   selectedStoreId = storeId || '';
-  const firstPath = safePhotos[0]?.photo_path || '';
-  const currentPathStillExists = safePhotos.some((photo) => photo.photo_path === selectedDressPhotoPath);
-  selectDressPhoto(currentPathStillExists ? selectedDressPhotoPath : firstPath);
+  const profileGroups = new Map();
+  safePhotos.forEach((photo) => {
+    const key = String(photo?.dress_profile_id || photo?.photo_path || '');
+    if (!key) {
+      return;
+    }
+    if (!profileGroups.has(key)) {
+      profileGroups.set(key, []);
+    }
+    profileGroups.get(key).push(photo);
+  });
+
+  const selectedPhotoStillExists = safePhotos.some((photo) => photo.photo_path === selectedDressPhotoPath);
+  if (selectedPhotoStillExists) {
+    selectDressPhoto(selectedDressPhotoPath);
+  } else {
+    const selectedProfilePhotos = profileGroups.get(String(selectedDressProfileId || '')) || [];
+    const fallbackPath = selectedProfilePhotos[0]?.photo_path || safePhotos[0]?.photo_path || '';
+    selectDressPhoto(fallbackPath);
+  }
 
   if (!safePhotos.length) {
     const empty = document.createElement('p');
@@ -1193,8 +1220,9 @@ const renderDetailsGallery = (dressPhotos, storeId) => {
     return;
   }
 
-  safePhotos.forEach((photo, index) => {
-    const photoUrl = photo.photo_path;
+  Array.from(profileGroups.entries()).forEach(([profileId, photos], profileIndex) => {
+    const cover = photos[0];
+    const photoUrl = cover.photo_path;
     const tile = document.createElement('div');
     tile.className = 'dress-grid-tile';
 
@@ -1205,18 +1233,24 @@ const renderDetailsGallery = (dressPhotos, storeId) => {
     const image = document.createElement('img');
     image.className = 'store-miniature-image';
     image.src = photoUrl;
-    image.alt = `Dress ${index + 1}`;
+    image.alt = `Dress ${profileIndex + 1}`;
+
+    const badge = document.createElement('span');
+    badge.className = 'dress-photo-count-badge';
+    badge.textContent = `${photos.length} photo${photos.length === 1 ? '' : 's'}`;
 
     previewButton.appendChild(image);
+    previewButton.appendChild(badge);
     previewButton.addEventListener('click', () => {
       selectDressPhoto(photoUrl);
+      selectedDressProfileId = profileId;
       const allButtons = detailMiniatures.querySelectorAll('.store-miniature-button');
       allButtons.forEach((button) => button.classList.remove('is-selected'));
       previewButton.classList.add('is-selected');
       setDressMetadataMessage('', '');
     });
 
-    if (photoUrl === selectedDressPhotoPath || (!selectedDressPhotoPath && index === 0)) {
+    if (String(selectedDressProfileId || '') === String(profileId) || (!selectedDressProfileId && profileIndex === 0)) {
       previewButton.classList.add('is-selected');
     }
     tile.appendChild(previewButton);
@@ -1225,7 +1259,7 @@ const renderDetailsGallery = (dressPhotos, storeId) => {
       const removeButton = document.createElement('button');
       removeButton.type = 'button';
       removeButton.className = 'text-link dress-remove-button';
-      removeButton.textContent = 'Remove';
+      removeButton.textContent = photos.length > 1 ? 'Remove cover photo' : 'Remove';
       removeButton.addEventListener('click', () => {
         removeDressPhoto(storeId, photoUrl);
       });
@@ -1294,13 +1328,14 @@ const updateDetailsSummary = (store) => {
   }
 
   const dressPhotos = Array.isArray(store.dress_photos) ? store.dress_photos : [];
+  const dressProfiles = Array.isArray(store.dress_profiles) ? store.dress_profiles : [];
   const storeMembers = getLinkedStoreMembers(store);
   const currentUser = getSessionUser();
   activeStoreCanManagePhotos = Boolean(currentUser && store.owner_email === currentUser);
   updateStoreBranding(store);
   detailsName.textContent = store.name || '';
   detailsAddress.textContent = store.location || '';
-  detailsPhotoCount.textContent = `${dressPhotos.length} picture${dressPhotos.length === 1 ? '' : 's'}`;
+  detailsPhotoCount.textContent = `${dressProfiles.length} dress profile${dressProfiles.length === 1 ? '' : 's'} · ${dressPhotos.length} picture${dressPhotos.length === 1 ? '' : 's'}`;
   if (detailsStylistCount) {
     detailsStylistCount.textContent = `${storeMembers.length} active stylist${storeMembers.length === 1 ? '' : 's'}`;
   }
@@ -1452,6 +1487,9 @@ if (dressPhotoForm) {
 
     try {
       formData.append('owner_email', getSessionUser());
+      if (selectedDressProfileId) {
+        formData.append('dress_profile_id', selectedDressProfileId);
+      }
       const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
         method: 'POST',
         body: formData,
@@ -1624,6 +1662,7 @@ if (dressMetadataForm) {
         body: JSON.stringify({
           owner_email: getSessionUser(),
           photo_path: selectedDressPhotoPath,
+          dress_profile_id: selectedDressProfileId || null,
           price,
           tags: selectedTags,
         }),
