@@ -13,6 +13,7 @@ const storeSwitcherTrigger = document.querySelector('[data-store-switcher-trigge
 const storeSwitcherMenu = document.querySelector('[data-store-switcher-menu]');
 const openInventoryButton = document.querySelector('[data-open-inventory]');
 const detailsPreviewImage = document.querySelector('[data-dress-preview-image]');
+const detailsPreviewSwitcher = document.querySelector('[data-dress-preview-switcher]');
 const detailMiniatures = document.querySelector('[data-dress-miniatures]');
 const dressPhotoForm = document.querySelector('[data-dress-photo-form]');
 const dressPhotoInput = dressPhotoForm?.querySelector('[data-dress-photo-input]');
@@ -63,6 +64,8 @@ const sessionRankingScore = document.querySelector('[data-session-ranking-score]
 const sessionRankingPosition = document.querySelector('[data-session-ranking-position]');
 const sessionRankingPrev = document.querySelector('[data-session-ranking-prev]');
 const sessionRankingNext = document.querySelector('[data-session-ranking-next]');
+const sessionRankingPhotoPrev = document.querySelector('[data-session-ranking-photo-prev]');
+const sessionRankingPhotoNext = document.querySelector('[data-session-ranking-photo-next]');
 const adminGrid = document.querySelector('[data-admin-grid]');
 const adminMessage = document.querySelector('[data-admin-message]');
 const sessionKey = 'bridalStudioCurrentUser';
@@ -98,6 +101,7 @@ let swipeLikes = [];
 let swipeDislikes = [];
 let rankedStoreDresses = [];
 let rankedStoreDressIndex = 0;
+let rankedStoreDressPhotoIndex = 0;
 let selectedTeamStoreId = '';
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
@@ -780,23 +784,41 @@ const buildSwipePreferenceScores = () => {
 const rankStoreDressesFromSession = () => {
   const preferenceScores = buildSwipePreferenceScores();
   const safePhotos = Array.isArray(currentDressPhotos) ? currentDressPhotos : [];
-  return safePhotos
-    .map((photo) => {
-      const normalizedTags = Array.isArray(photo.tags)
-        ? photo.tags.map((tag) => normalizeToken(tag)).filter(Boolean)
-        : [];
+  const groupedProfiles = new Map();
+
+  safePhotos.forEach((photo) => {
+    const profileId = String(photo?.dress_profile_id || photo?.photo_path || '');
+    if (!profileId) {
+      return;
+    }
+    if (!groupedProfiles.has(profileId)) {
+      groupedProfiles.set(profileId, []);
+    }
+    groupedProfiles.get(profileId).push(photo);
+  });
+
+  return Array.from(groupedProfiles.entries())
+    .map(([profileId, photos]) => {
+      const normalizedTags = Array.from(
+        new Set(
+          photos.flatMap((photo) =>
+            Array.isArray(photo.tags) ? photo.tags.map((tag) => normalizeToken(tag)).filter(Boolean) : []
+          )
+        )
+      );
       const score = normalizedTags.reduce((total, tagId) => total + (preferenceScores.get(tagId) || 0), 0);
       return {
-        ...photo,
-        score,
+        profileId,
+        photos,
         normalizedTags,
+        score,
       };
     })
     .sort((first, second) => {
       if (second.score !== first.score) {
         return second.score - first.score;
       }
-      return (first.photo_path || '').localeCompare(second.photo_path || '');
+      return (first.photos[0]?.photo_path || '').localeCompare(second.photos[0]?.photo_path || '');
     });
 };
 
@@ -812,7 +834,7 @@ const setSessionResultsTab = (tabId) => {
 };
 
 const renderRankedStoreDress = () => {
-  if (!sessionRankingImage || !sessionRankingCaption || !sessionRankingScore || !sessionRankingPosition || !sessionRankingPrev || !sessionRankingNext) {
+  if (!sessionRankingImage || !sessionRankingCaption || !sessionRankingScore || !sessionRankingPosition || !sessionRankingPrev || !sessionRankingNext || !sessionRankingPhotoPrev || !sessionRankingPhotoNext) {
     return;
   }
 
@@ -823,17 +845,28 @@ const renderRankedStoreDress = () => {
     sessionRankingPosition.textContent = '';
     sessionRankingPrev.disabled = true;
     sessionRankingNext.disabled = true;
+    sessionRankingPhotoPrev.disabled = true;
+    sessionRankingPhotoNext.disabled = true;
     return;
   }
 
   const current = rankedStoreDresses[rankedStoreDressIndex];
+  const photos = Array.isArray(current.photos) ? current.photos : [];
+  if (rankedStoreDressPhotoIndex >= photos.length) {
+    rankedStoreDressPhotoIndex = 0;
+  }
+  const currentPhoto = photos[rankedStoreDressPhotoIndex] || photos[0] || null;
   const tagText = current.normalizedTags.length ? current.normalizedTags.join(', ') : 'none';
-  sessionRankingImage.src = current.photo_path;
-  sessionRankingCaption.textContent = `Top match tags: ${tagText}`;
+  if (currentPhoto?.photo_path) {
+    sessionRankingImage.src = currentPhoto.photo_path;
+  }
+  sessionRankingCaption.textContent = `Top match tags: ${tagText} • Photo ${rankedStoreDressPhotoIndex + 1} of ${Math.max(photos.length, 1)}`;
   sessionRankingScore.textContent = `Match score: ${current.score > 0 ? `+${current.score}` : current.score}`;
   sessionRankingPosition.textContent = `Dress ${rankedStoreDressIndex + 1} of ${rankedStoreDresses.length}`;
   sessionRankingPrev.disabled = rankedStoreDressIndex === 0;
   sessionRankingNext.disabled = rankedStoreDressIndex >= rankedStoreDresses.length - 1;
+  sessionRankingPhotoPrev.disabled = rankedStoreDressPhotoIndex === 0;
+  sessionRankingPhotoNext.disabled = rankedStoreDressPhotoIndex >= photos.length - 1;
 };
 
 const renderSessionResults = () => {
@@ -918,6 +951,7 @@ const renderSessionResults = () => {
 
   rankedStoreDresses = rankStoreDressesFromSession();
   rankedStoreDressIndex = 0;
+  rankedStoreDressPhotoIndex = 0;
   renderRankedStoreDress();
   setSessionResultsTab('insights');
 
@@ -1003,6 +1037,7 @@ const startDefaultSession = async () => {
     swipeDislikes = [];
     rankedStoreDresses = [];
     rankedStoreDressIndex = 0;
+    rankedStoreDressPhotoIndex = 0;
 
     if (swipeWorkspace) {
       swipeWorkspace.classList.remove('is-hidden');
@@ -1295,9 +1330,48 @@ const renderTagOptions = (selectedTags = []) => {
 
 const getCurrentDressPhoto = () => currentDressPhotos.find((photo) => photo.photo_path === selectedDressPhotoPath) || null;
 
+const getCurrentProfilePhotos = () => {
+  if (!selectedDressProfileId) {
+    return [];
+  }
+  return currentDressPhotos.filter((photo) => String(photo?.dress_profile_id || '') === String(selectedDressProfileId));
+};
+
+const renderDetailsPreviewSwitcher = () => {
+  if (!detailsPreviewSwitcher) {
+    return;
+  }
+  detailsPreviewSwitcher.innerHTML = '';
+  const profilePhotos = getCurrentProfilePhotos();
+  if (profilePhotos.length <= 1) {
+    detailsPreviewSwitcher.classList.add('is-hidden');
+    return;
+  }
+
+  profilePhotos.forEach((photo, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'dress-preview-switcher-item';
+    button.classList.toggle('is-selected', photo.photo_path === selectedDressPhotoPath);
+
+    const image = document.createElement('img');
+    image.src = photo.photo_path;
+    image.alt = `Dress profile photo ${index + 1}`;
+    image.className = 'dress-preview-switcher-image';
+
+    button.appendChild(image);
+    button.addEventListener('click', () => {
+      selectDressPhoto(photo.photo_path);
+      setDressMetadataMessage('', '');
+    });
+    detailsPreviewSwitcher.appendChild(button);
+  });
+
+  detailsPreviewSwitcher.classList.remove('is-hidden');
+};
+
 const selectDressPhoto = (photoPath) => {
   selectedDressPhotoPath = photoPath || '';
-  setPreviewPhoto(photoPath || '');
   const selectedPhoto = getCurrentDressPhoto();
   selectedDressProfileId = selectedPhoto?.dress_profile_id ? String(selectedPhoto.dress_profile_id) : '';
   if (dressPriceInput) {
@@ -1310,7 +1384,9 @@ const selectDressPhoto = (photoPath) => {
   if (profileMergeButton) {
     profileMergeButton.disabled = !canEditProfile;
   }
+  setPreviewPhoto(photoPath || '');
   renderTagOptions(selectedPhoto?.tags || []);
+  renderDetailsPreviewSwitcher();
 };
 
 const renderDetailsGallery = (dressPhotos, storeId) => {
@@ -2400,6 +2476,7 @@ if (sessionRankingPrev) {
       return;
     }
     rankedStoreDressIndex -= 1;
+    rankedStoreDressPhotoIndex = 0;
     renderRankedStoreDress();
   });
 }
@@ -2410,6 +2487,29 @@ if (sessionRankingNext) {
       return;
     }
     rankedStoreDressIndex += 1;
+    rankedStoreDressPhotoIndex = 0;
+    renderRankedStoreDress();
+  });
+}
+
+if (sessionRankingPhotoPrev) {
+  sessionRankingPhotoPrev.addEventListener('click', () => {
+    if (rankedStoreDressPhotoIndex <= 0) {
+      return;
+    }
+    rankedStoreDressPhotoIndex -= 1;
+    renderRankedStoreDress();
+  });
+}
+
+if (sessionRankingPhotoNext) {
+  sessionRankingPhotoNext.addEventListener('click', () => {
+    const current = rankedStoreDresses[rankedStoreDressIndex];
+    const photoCount = Array.isArray(current?.photos) ? current.photos.length : 0;
+    if (rankedStoreDressPhotoIndex >= photoCount - 1) {
+      return;
+    }
+    rankedStoreDressPhotoIndex += 1;
     renderRankedStoreDress();
   });
 }
