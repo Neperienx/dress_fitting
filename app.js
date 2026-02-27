@@ -18,6 +18,12 @@ const dressPhotoForm = document.querySelector('[data-dress-photo-form]');
 const dressPhotoInput = dressPhotoForm?.querySelector('[data-dress-photo-input]');
 const dressPhotoSubmit = dressPhotoForm?.querySelector('[data-dress-photo-submit]');
 const dressPhotoMessage = dressPhotoForm?.querySelector('[data-dress-photo-message]');
+const profileAddPhotoButton = dressPhotoForm?.querySelector('[data-profile-add-photo-button]');
+const profileAddPhotoInput = dressPhotoForm?.querySelector('[data-profile-add-photo-input]');
+const profileMergeButton = dressPhotoForm?.querySelector('[data-profile-merge-button]');
+const profileMergeModal = document.querySelector('[data-profile-merge-modal]');
+const profileMergeOptions = document.querySelector('[data-profile-merge-options]');
+const profileMergeCancel = document.querySelector('[data-profile-merge-cancel]');
 const dressMetadataForm = document.querySelector('[data-dress-metadata-form]');
 const dressPriceInput = dressMetadataForm?.querySelector('[data-dress-price-input]');
 const dressMetadataSubmit = dressMetadataForm?.querySelector('[data-dress-metadata-submit]');
@@ -82,6 +88,7 @@ let selectedDressProfileId = '';
 let selectedStoreId = '';
 let activeStoreCanManagePhotos = false;
 let currentDressPhotos = [];
+let currentDressProfiles = [];
 let tagOptions = null;
 let linkedStores = [];
 
@@ -169,6 +176,7 @@ const openPhotoLightbox = (photoUrl) => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     closePhotoLightbox();
+    closeProfileMergeModal();
   }
 });
 
@@ -1059,6 +1067,121 @@ const setDressPhotoMessage = (message, type) => {
   }
 };
 
+
+const closeProfileMergeModal = () => {
+  if (!profileMergeModal) {
+    return;
+  }
+  profileMergeModal.classList.add('is-hidden');
+};
+
+const performDressPhotoUpload = async (files, profileId) => {
+  const storeId = dressPhotoForm?.dataset.storeId;
+  if (!storeId) {
+    setDressPhotoMessage('Select a store first.', 'error');
+    return;
+  }
+  if (!Array.isArray(files) || !files.length) {
+    setDressPhotoMessage('Please choose at least one photo before uploading.', 'error');
+    return;
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('dress_photo', file);
+  });
+  setDressPhotoMessage(`Uploading ${files.length} photo${files.length === 1 ? '' : 's'}...`, '');
+
+  try {
+    formData.append('owner_email', getSessionUser());
+    const resolvedProfileId = profileId || selectedDressProfileId;
+    if (resolvedProfileId) {
+      formData.append('dress_profile_id', resolvedProfileId);
+    }
+    const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      setDressPhotoMessage(errorData.error || 'Unable to upload photo right now.', 'error');
+      return;
+    }
+
+    const store = await response.json();
+    updateDetailsSummary(store);
+    if (dressPhotoInput) {
+      dressPhotoInput.value = '';
+    }
+    if (profileAddPhotoInput) {
+      profileAddPhotoInput.value = '';
+    }
+    setDressPhotoMessage(`${files.length} dress photo${files.length === 1 ? '' : 's'} uploaded.`, 'success');
+  } catch (error) {
+    setDressPhotoMessage('Unable to upload photo right now.', 'error');
+  }
+};
+
+const openProfileMergeModal = () => {
+  if (!profileMergeModal || !profileMergeOptions) {
+    return;
+  }
+  if (!selectedDressProfileId) {
+    setDressMetadataMessage('Select a profile first.', 'error');
+    return;
+  }
+  const mergeCandidates = currentDressProfiles.filter(
+    (profile) => String(profile?.id || '') !== String(selectedDressProfileId)
+  );
+  if (!mergeCandidates.length) {
+    setDressMetadataMessage('No other profiles are available to merge.', 'error');
+    return;
+  }
+
+  profileMergeOptions.innerHTML = '';
+  mergeCandidates.forEach((profile, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'button secondary';
+    const photosInProfile = currentDressPhotos.filter(
+      (photo) => String(photo?.dress_profile_id || '') === String(profile.id)
+    ).length;
+    button.textContent = `Profile ${index + 1} (${photosInProfile} photo${photosInProfile === 1 ? '' : 's'})`;
+    button.addEventListener('click', async () => {
+      const ownerEmail = getSessionUser();
+      if (!selectedStoreId || !ownerEmail) {
+        return;
+      }
+      setDressMetadataMessage('Merging profiles...', '');
+      try {
+        const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/dress-profile-merge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            owner_email: ownerEmail,
+            source_profile_id: Number(selectedDressProfileId),
+            target_profile_id: Number(profile.id),
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          setDressMetadataMessage(errorData.error || 'Unable to merge profiles right now.', 'error');
+          return;
+        }
+        const store = await response.json();
+        closeProfileMergeModal();
+        updateDetailsSummary(store);
+        setDressMetadataMessage('Profiles merged successfully.', 'success');
+      } catch (error) {
+        setDressMetadataMessage('Unable to merge profiles right now.', 'error');
+      }
+    });
+    profileMergeOptions.appendChild(button);
+  });
+
+  profileMergeModal.classList.remove('is-hidden');
+};
+
 if (storeGrid) {
   storeGrid.addEventListener('click', (event) => {
     const tile = event.target.closest('.store-tile');
@@ -1180,6 +1303,13 @@ const selectDressPhoto = (photoPath) => {
   if (dressPriceInput) {
     dressPriceInput.value = selectedPhoto && typeof selectedPhoto.price === 'number' ? selectedPhoto.price : '';
   }
+  const canEditProfile = activeStoreCanManagePhotos && Boolean(selectedDressProfileId);
+  if (profileAddPhotoButton) {
+    profileAddPhotoButton.disabled = !canEditProfile;
+  }
+  if (profileMergeButton) {
+    profileMergeButton.disabled = !canEditProfile;
+  }
   renderTagOptions(selectedPhoto?.tags || []);
 };
 
@@ -1294,6 +1424,12 @@ const updateDetailsSummary = (store) => {
     if (dressPhotoSubmit) {
       dressPhotoSubmit.disabled = true;
     }
+    if (profileAddPhotoButton) {
+      profileAddPhotoButton.disabled = true;
+    }
+    if (profileMergeButton) {
+      profileMergeButton.disabled = true;
+    }
     if (dressPriceInput) {
       dressPriceInput.value = '';
       dressPriceInput.disabled = true;
@@ -1321,6 +1457,8 @@ const updateDetailsSummary = (store) => {
     }
     setSessionMessage('', '');
     activeStoreCanManagePhotos = false;
+    currentDressProfiles = [];
+    closeProfileMergeModal();
     renderDetailsGallery([], '');
     renderTeamStorePicker();
     renderStoreSwitcher();
@@ -1329,6 +1467,7 @@ const updateDetailsSummary = (store) => {
 
   const dressPhotos = Array.isArray(store.dress_photos) ? store.dress_photos : [];
   const dressProfiles = Array.isArray(store.dress_profiles) ? store.dress_profiles : [];
+  currentDressProfiles = dressProfiles;
   const storeMembers = getLinkedStoreMembers(store);
   const currentUser = getSessionUser();
   activeStoreCanManagePhotos = Boolean(currentUser && store.owner_email === currentUser);
@@ -1356,6 +1495,12 @@ const updateDetailsSummary = (store) => {
   }
   if (dressPhotoSubmit) {
     dressPhotoSubmit.disabled = !activeStoreCanManagePhotos;
+  }
+  if (profileAddPhotoButton) {
+    profileAddPhotoButton.disabled = !activeStoreCanManagePhotos || !selectedDressProfileId;
+  }
+  if (profileMergeButton) {
+    profileMergeButton.disabled = !activeStoreCanManagePhotos || !selectedDressProfileId;
   }
   if (dressPhotoInput) {
     dressPhotoInput.disabled = !activeStoreCanManagePhotos;
@@ -1394,6 +1539,7 @@ const updateDetailsSummary = (store) => {
   } else {
     setSessionMessage('', '');
   }
+  closeProfileMergeModal();
   renderDetailsGallery(dressPhotos, String(store.id));
   renderTeamStorePicker();
   renderStoreSwitcher();
@@ -1468,49 +1614,48 @@ const loadStoreDetailsPage = async () => {
 if (dressPhotoForm) {
   dressPhotoForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const storeId = dressPhotoForm.dataset.storeId;
-    if (!storeId) {
-      setDressPhotoMessage('Select a store first.', 'error');
-      return;
-    }
     const files = Array.from(dressPhotoInput?.files || []).filter(Boolean);
-    if (!files.length) {
-      setDressPhotoMessage('Please choose at least one photo before uploading.', 'error');
+    await performDressPhotoUpload(files, '');
+  });
+}
+
+if (profileAddPhotoButton) {
+  profileAddPhotoButton.addEventListener('click', () => {
+    if (!selectedDressProfileId) {
+      setDressPhotoMessage('Select a dress profile first.', 'error');
       return;
     }
+    profileAddPhotoInput?.click();
+  });
+}
 
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('dress_photo', file);
-    });
-    setDressPhotoMessage(`Uploading ${files.length} photo${files.length === 1 ? '' : 's'}...`, '');
+if (profileAddPhotoInput) {
+  profileAddPhotoInput.addEventListener('change', async () => {
+    const files = Array.from(profileAddPhotoInput.files || []).filter(Boolean);
+    await performDressPhotoUpload(files, selectedDressProfileId);
+  });
+}
 
-    try {
-      formData.append('owner_email', getSessionUser());
-      if (selectedDressProfileId) {
-        formData.append('dress_profile_id', selectedDressProfileId);
-      }
-      const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        setDressPhotoMessage(errorData.error || 'Unable to upload photo right now.', 'error');
-        return;
-      }
+if (profileMergeButton) {
+  profileMergeButton.addEventListener('click', () => {
+    openProfileMergeModal();
+  });
+}
 
-      const store = await response.json();
-      updateDetailsSummary(store);
-      if (dressPhotoInput) {
-        dressPhotoInput.value = '';
-      }
-      setDressPhotoMessage(`${files.length} dress photo${files.length === 1 ? '' : 's'} uploaded.`, 'success');
-    } catch (error) {
-      setDressPhotoMessage('Unable to upload photo right now.', 'error');
+if (profileMergeCancel) {
+  profileMergeCancel.addEventListener('click', () => {
+    closeProfileMergeModal();
+  });
+}
+
+if (profileMergeModal) {
+  profileMergeModal.addEventListener('click', (event) => {
+    if (event.target === profileMergeModal) {
+      closeProfileMergeModal();
     }
   });
 }
+
 
 
 

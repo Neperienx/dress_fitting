@@ -650,6 +650,39 @@ def update_store_dress_photo_metadata(
     return result.rowcount > 0
 
 
+def merge_store_dress_profiles(store_id: int, source_profile_id: int, target_profile_id: int) -> bool:
+    if source_profile_id == target_profile_id:
+        return False
+    with sqlite3.connect(DB_PATH) as conn:
+        source_profile = conn.execute(
+            "SELECT id FROM store_dress_profiles WHERE id = ? AND store_id = ?",
+            (source_profile_id, store_id),
+        ).fetchone()
+        target_profile = conn.execute(
+            "SELECT id FROM store_dress_profiles WHERE id = ? AND store_id = ?",
+            (target_profile_id, store_id),
+        ).fetchone()
+        if not source_profile or not target_profile:
+            return False
+
+        moved = conn.execute(
+            """
+            UPDATE store_dress_photos
+            SET dress_profile_id = ?
+            WHERE store_id = ? AND dress_profile_id = ?
+            """,
+            (target_profile_id, store_id, source_profile_id),
+        )
+        if moved.rowcount < 1:
+            return False
+
+        conn.execute(
+            "DELETE FROM store_dress_profiles WHERE id = ? AND store_id = ?",
+            (source_profile_id, store_id),
+        )
+    return True
+
+
 def autolabel_store_dress_photos(store: dict, overwrite_existing: bool) -> dict:
     store_id = int(store.get("id"))
     photos = list(store.get("dress_photos") or [])
@@ -1239,6 +1272,21 @@ def render_store_details(copy: dict) -> str:
                     <button class="button secondary" type="submit" data-dress-photo-submit>
                       {escape(copy.get("photoUploadButton") or "Upload photo")}
                     </button>
+                    <div class="profile-actions">
+                      <button class="button secondary" type="button" data-profile-add-photo-button>
+                        Add a picture for this profile
+                      </button>
+                      <button class="button secondary" type="button" data-profile-merge-button>
+                        merge with other profile
+                      </button>
+                      <input
+                        class="is-hidden"
+                        type="file"
+                        accept=".png,.jpg,.jpeg,.webp"
+                        multiple
+                        data-profile-add-photo-input
+                      />
+                    </div>
                     <p
                       class="auth-message form-message"
                       data-dress-photo-message
@@ -1277,6 +1325,17 @@ def render_store_details(copy: dict) -> str:
                     <p class="auth-message form-message" data-dress-metadata-message role="status" aria-live="polite"></p>
                   </form>
                 </section>
+              </div>
+
+              <div class="profile-merge-modal is-hidden" data-profile-merge-modal>
+                <div class="profile-merge-modal-card">
+                  <h3>Merge with other profile</h3>
+                  <p class="store-detail-location">Choose a target profile to merge the selected profile into.</p>
+                  <div class="profile-merge-options" data-profile-merge-options></div>
+                  <div class="profile-merge-actions">
+                    <button class="button secondary" type="button" data-profile-merge-cancel>Cancel</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1593,6 +1652,74 @@ class LandingHandler(SimpleHTTPRequestHandler):
                     }
                 ).encode("utf-8")
             )
+            return
+
+        dress_profile_merge_match = re.fullmatch(r"/api/stores/(\d+)/dress-profile-merge", parsed.path)
+        if dress_profile_merge_match:
+            store_id = int(dress_profile_merge_match.group(1))
+            store = fetch_store_by_id(store_id)
+            if not store:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Store not found."}).encode("utf-8"))
+                return
+
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = 0
+            payload = self.rfile.read(length).decode("utf-8") if length else ""
+            try:
+                data = json.loads(payload) if payload else {}
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Invalid JSON payload."}).encode("utf-8"))
+                return
+
+            owner_email = (data.get("owner_email") or "").strip().lower()
+            if owner_email != (store.get("owner_email") or "").strip().lower():
+                self.send_response(403)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "Only the store owner can merge dress profiles."}).encode("utf-8")
+                )
+                return
+
+            try:
+                source_profile_id = int(data.get("source_profile_id"))
+                target_profile_id = int(data.get("target_profile_id"))
+            except (TypeError, ValueError):
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps({"error": "source_profile_id and target_profile_id must be integers."}).encode("utf-8")
+                )
+                return
+
+            merged = merge_store_dress_profiles(store_id, source_profile_id, target_profile_id)
+            if not merged:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {
+                            "error": "Unable to merge profiles. Ensure both profiles belong to this store and are different.",
+                        }
+                    ).encode("utf-8")
+                )
+                return
+
+            updated_store = fetch_store_by_id(store_id)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(updated_store).encode("utf-8"))
             return
 
         dress_photo_match = re.fullmatch(r"/api/stores/(\d+)/dress-photo", parsed.path)
