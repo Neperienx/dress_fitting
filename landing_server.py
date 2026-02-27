@@ -1253,6 +1253,7 @@ def render_store_details(copy: dict) -> str:
                 <h3>{escape(copy.get("galleryTitle") or "Manage Inventory")}</h3>
                 <p class="store-detail-location">Select a miniature to preview and tag it, then upload or remove dresses as needed.</p>
                 <img class="dress-preview-image is-hidden" data-dress-preview-image alt="Detailed dress preview" />
+                <div class="dress-preview-switcher" data-dress-preview-switcher></div>
                 <div class="dress-photo-grid" data-dress-miniatures></div>
               </div>
 
@@ -1390,6 +1391,10 @@ def render_store_details(copy: dict) -> str:
                   <div class="session-ranking" data-session-ranking>
                     <div class="session-ranking-viewer">
                       <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+                    </div>
+                    <div class="session-ranking-photo-actions">
+                      <button class="button secondary" type="button" data-session-ranking-photo-prev>Previous photo</button>
+                      <button class="button secondary" type="button" data-session-ranking-photo-next>Next photo</button>
                     </div>
                     <div class="session-ranking-actions">
                       <button class="button secondary" type="button" data-session-ranking-prev>←</button>
