@@ -53,6 +53,9 @@ const swipeImage = document.querySelector('[data-swipe-image]');
 const swipeCaption = document.querySelector('[data-swipe-caption]');
 const swipeProgress = document.querySelector('[data-swipe-progress]');
 const swipeSelectedTags = document.querySelector('[data-swipe-selected-tags]');
+const swipePhotoPrev = document.querySelector('[data-swipe-photo-prev]');
+const swipePhotoNext = document.querySelector('[data-swipe-photo-next]');
+const swipePhotoIndicator = document.querySelector('[data-swipe-photo-indicator]');
 const dislikeButton = document.querySelector('[data-swipe-dislike]');
 const likeButton = document.querySelector('[data-swipe-like]');
 const sessionResults = document.querySelector('[data-session-results]');
@@ -67,6 +70,7 @@ const sessionRankingPrev = document.querySelector('[data-session-ranking-prev]')
 const sessionRankingNext = document.querySelector('[data-session-ranking-next]');
 const sessionRankingPhotoPrev = document.querySelector('[data-session-ranking-photo-prev]');
 const sessionRankingPhotoNext = document.querySelector('[data-session-ranking-photo-next]');
+const sessionRankingPhotoIndicator = document.querySelector('[data-session-ranking-photo-indicator]');
 const adminGrid = document.querySelector('[data-admin-grid]');
 const adminMessage = document.querySelector('[data-admin-message]');
 const sessionKey = 'bridalStudioCurrentUser';
@@ -98,6 +102,7 @@ let linkedStores = [];
 
 let swipeDeck = [];
 let swipeIndex = 0;
+let swipePhotoIndex = 0;
 let swipeLikes = [];
 let swipeDislikes = [];
 let rankedStoreDresses = [];
@@ -695,10 +700,12 @@ const buildInventorySessionCandidates = (store) => {
       profileMap.set(profileId, {
         profileId,
         coverPhotoPath: photo.photo_path,
+        photoPaths: [],
         tags: new Set(),
       });
     }
     const profile = profileMap.get(profileId);
+    profile.photoPaths.push(photo.photo_path);
     (Array.isArray(photo.tags) ? photo.tags : []).forEach((tag) => {
       if (typeof tag === 'string' && tag.trim()) {
         profile.tags.add(tag.trim());
@@ -709,6 +716,7 @@ const buildInventorySessionCandidates = (store) => {
   return Array.from(profileMap.values()).map((profile) => ({
     profileId: profile.profileId,
     coverPhotoPath: profile.coverPhotoPath,
+    photoPaths: profile.photoPaths,
     tags: Array.from(profile.tags),
   }));
 };
@@ -801,10 +809,27 @@ const renderSwipeCard = () => {
   }
 
   const current = swipeDeck[swipeIndex];
-  swipeImage.src = current.photoPath;
-  swipeCaption.textContent = current.fileName;
+  const photoPaths = Array.isArray(current.photoPaths) && current.photoPaths.length
+    ? current.photoPaths
+    : [current.photoPath].filter(Boolean);
+  if (swipePhotoIndex >= photoPaths.length) {
+    swipePhotoIndex = 0;
+  }
+  const currentPhotoPath = photoPaths[swipePhotoIndex] || current.photoPath;
+
+  swipeImage.src = currentPhotoPath;
+  swipeCaption.textContent = (currentPhotoPath || '').split('/').pop() || current.fileName;
   swipeCategoryChip.textContent = current.category;
   swipeProgress.textContent = `Look ${swipeIndex + 1} of ${swipeDeck.length}`;
+  if (swipePhotoIndicator) {
+    swipePhotoIndicator.textContent = `${swipePhotoIndex + 1}/${Math.max(photoPaths.length, 1)}`;
+  }
+  if (swipePhotoPrev) {
+    swipePhotoPrev.disabled = swipePhotoIndex === 0;
+  }
+  if (swipePhotoNext) {
+    swipePhotoNext.disabled = swipePhotoIndex >= photoPaths.length - 1;
+  }
   if (swipeSelectedTags) {
     const tags = Array.isArray(current.tags) ? current.tags : [];
     swipeSelectedTags.textContent = tags.length
@@ -972,6 +997,9 @@ const renderRankedStoreDress = () => {
     sessionRankingNext.disabled = true;
     sessionRankingPhotoPrev.disabled = true;
     sessionRankingPhotoNext.disabled = true;
+    if (sessionRankingPhotoIndicator) {
+      sessionRankingPhotoIndicator.textContent = '';
+    }
     return;
   }
 
@@ -985,9 +1013,12 @@ const renderRankedStoreDress = () => {
   if (currentPhoto?.photo_path) {
     sessionRankingImage.src = currentPhoto.photo_path;
   }
-  sessionRankingCaption.textContent = `Top match tags: ${tagText} • Photo ${rankedStoreDressPhotoIndex + 1} of ${Math.max(photos.length, 1)}`;
+  sessionRankingCaption.textContent = `Top match tags: ${tagText}`;
   sessionRankingScore.textContent = `Match score: ${current.score > 0 ? `+${current.score}` : current.score}`;
   sessionRankingPosition.textContent = `Dress ${rankedStoreDressIndex + 1} of ${rankedStoreDresses.length}`;
+  if (sessionRankingPhotoIndicator) {
+    sessionRankingPhotoIndicator.textContent = `${rankedStoreDressPhotoIndex + 1}/${Math.max(photos.length, 1)}`;
+  }
   sessionRankingPrev.disabled = rankedStoreDressIndex === 0;
   sessionRankingNext.disabled = rankedStoreDressIndex >= rankedStoreDresses.length - 1;
   sessionRankingPhotoPrev.disabled = rankedStoreDressPhotoIndex === 0;
@@ -1095,6 +1126,7 @@ const handleSwipe = (direction) => {
     swipeDislikes.push(current);
   }
   swipeIndex += 1;
+  swipePhotoIndex = 0;
 
   if (swipeIndex >= swipeDeck.length) {
     renderSessionResults();
@@ -1138,6 +1170,7 @@ const startDefaultSession = async (requestedDressCount = DEFAULT_SESSION_DRESS_C
       return {
         photoPath: profile.coverPhotoPath,
         fileName: profile.coverPhotoPath.split('/').pop() || profile.coverPhotoPath,
+        photoPaths: Array.isArray(profile.photoPaths) ? profile.photoPaths : [profile.coverPhotoPath],
         tags,
         category: categoryFromTag || resolvePhotoCategory(profile.coverPhotoPath, tagMap, fallbackCategories),
       };
@@ -1152,6 +1185,7 @@ const startDefaultSession = async (requestedDressCount = DEFAULT_SESSION_DRESS_C
     }
 
     swipeIndex = 0;
+    swipePhotoIndex = 0;
     swipeLikes = [];
     swipeDislikes = [];
     rankedStoreDresses = [];
@@ -2585,6 +2619,30 @@ if (dislikeButton) {
 
 if (likeButton) {
   likeButton.addEventListener('click', () => handleSwipe('like'));
+}
+
+if (swipePhotoPrev) {
+  swipePhotoPrev.addEventListener('click', () => {
+    if (swipePhotoIndex <= 0) {
+      return;
+    }
+    swipePhotoIndex -= 1;
+    renderSwipeCard();
+  });
+}
+
+if (swipePhotoNext) {
+  swipePhotoNext.addEventListener('click', () => {
+    const current = swipeDeck[swipeIndex];
+    const photoCount = Array.isArray(current?.photoPaths) && current.photoPaths.length
+      ? current.photoPaths.length
+      : 1;
+    if (swipePhotoIndex >= photoCount - 1) {
+      return;
+    }
+    swipePhotoIndex += 1;
+    renderSwipeCard();
+  });
 }
 
 if (sessionResultTabs.length) {
