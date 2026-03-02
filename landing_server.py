@@ -1366,6 +1366,11 @@ def render_store_details(copy: dict) -> str:
                   <img class="swipe-image" data-swipe-image alt="Dress session photo" />
                   <p class="swipe-caption" data-swipe-caption></p>
                 </div>
+                <div class="swipe-photo-actions">
+                  <button class="button secondary" type="button" data-swipe-photo-prev>Previous photo</button>
+                  <button class="button secondary" type="button" data-swipe-photo-next>Next photo</button>
+                </div>
+                <p class="store-detail-meta photo-count-indicator" data-swipe-photo-indicator></p>
                 <div class="swipe-actions">
                   <button class="button secondary swipe-action" type="button" data-swipe-dislike>
                     ← Dislike
@@ -1400,6 +1405,7 @@ def render_store_details(copy: dict) -> str:
                       <button class="button secondary" type="button" data-session-ranking-photo-prev>Previous photo</button>
                       <button class="button secondary" type="button" data-session-ranking-photo-next>Next photo</button>
                     </div>
+                    <p class="store-detail-meta photo-count-indicator" data-session-ranking-photo-indicator></p>
                     <div class="session-ranking-actions">
                       <button class="button secondary" type="button" data-session-ranking-prev>←</button>
                       <button class="button secondary" type="button" data-session-ranking-next>→</button>

@@ -1229,6 +1229,17 @@ h1 {
   color: var(--muted);
 }
 
+.swipe-photo-actions {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+}
+
+.photo-count-indicator {
+  text-align: center;
+  font-weight: 600;
+}
+
 .swipe-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(140px, 1fr));
