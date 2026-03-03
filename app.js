@@ -656,6 +656,17 @@ const normalizeToken = (value) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-');
 
+const resolvePhotoUrl = (photoPath) => {
+  const rawPath = (photoPath || '').toString().trim();
+  if (!rawPath) {
+    return '';
+  }
+  if (/^(?:https?:|data:|blob:|\/)/i.test(rawPath)) {
+    return rawPath;
+  }
+  return `/${rawPath.replace(/^\.\//, '')}`;
+};
+
 const buildTagToCategoryMap = () => {
   const map = new Map();
   if (!tagOptions || !Array.isArray(tagOptions.categories)) {
@@ -1031,7 +1042,7 @@ const renderRankedStoreDress = () => {
   const currentPhoto = photos[rankedStoreDressPhotoIndex] || photos[0] || null;
   const tagText = current.normalizedTags.length ? current.normalizedTags.join(', ') : 'none';
   if (currentPhoto?.photo_path) {
-    sessionRankingImage.src = currentPhoto.photo_path;
+    sessionRankingImage.src = resolvePhotoUrl(currentPhoto.photo_path);
   }
   sessionRankingCaption.textContent = `Top match tags: ${tagText}`;
   sessionRankingScore.textContent = `Match score: ${current.score > 0 ? `+${current.score}` : current.score}`;
