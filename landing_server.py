@@ -952,7 +952,10 @@ def render_store_details(copy: dict) -> str:
           <div class="swipe-workspace is-hidden" data-swipe-workspace>
             <div class="swipe-card" data-swipe-card>
               <span class="swipe-chip" data-swipe-category-chip></span>
-              <img class="swipe-image" data-swipe-image alt="Dress session photo" />
+              <button class="profile-photo-button" type="button" data-swipe-photo-nav aria-label="Navigate session photos">
+                <span class="profile-photo-indicator" data-swipe-photo-indicator aria-hidden="true"></span>
+                <img class="swipe-image" data-swipe-image alt="Dress session photo" />
+              </button>
               <p class="swipe-caption" data-swipe-caption></p>
             </div>
             <div class="swipe-actions">
@@ -983,7 +986,10 @@ def render_store_details(copy: dict) -> str:
             <div class="session-results-panel is-hidden" data-session-results-panel="ranking">
               <div class="session-ranking" data-session-ranking>
                 <div class="session-ranking-viewer">
-                  <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+                  <button class="profile-photo-button" type="button" data-session-ranking-photo-nav aria-label="Navigate ranked dress photos">
+                    <span class="profile-photo-indicator" data-session-ranking-photo-indicator aria-hidden="true"></span>
+                    <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+                  </button>
                 </div>
                 <div class="session-ranking-actions">
                   <button class="button secondary" type="button" data-session-ranking-prev>←</button>
