@@ -1362,15 +1362,16 @@ def render_store_details(copy: dict) -> str:
               <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
               <div class="swipe-workspace is-hidden" data-swipe-workspace>
                 <div class="swipe-card" data-swipe-card>
+                  <div class="photo-progress" data-swipe-photo-progress>
+                    <div class="photo-progress-steps" data-swipe-photo-steps></div>
+                    <p class="photo-progress-label" data-swipe-photo-indicator></p>
+                  </div>
                   <span class="swipe-chip" data-swipe-category-chip></span>
-                  <img class="swipe-image" data-swipe-image alt="Dress session photo" />
+                  <div class="swipe-image-frame" data-swipe-photo-navigator>
+                    <img class="swipe-image" data-swipe-image alt="Dress session photo" />
+                  </div>
                   <p class="swipe-caption" data-swipe-caption></p>
                 </div>
-                <div class="swipe-photo-actions">
-                  <button class="button secondary" type="button" data-swipe-photo-prev>Previous photo</button>
-                  <button class="button secondary" type="button" data-swipe-photo-next>Next photo</button>
-                </div>
-                <p class="store-detail-meta photo-count-indicator" data-swipe-photo-indicator></p>
                 <div class="swipe-actions">
                   <button class="button secondary swipe-action" type="button" data-swipe-dislike>
                     ← Dislike
@@ -1399,13 +1400,14 @@ def render_store_details(copy: dict) -> str:
                 <div class="session-results-panel is-hidden" data-session-results-panel="ranking">
                   <div class="session-ranking" data-session-ranking>
                     <div class="session-ranking-viewer">
-                      <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+                      <div class="photo-progress" data-session-ranking-photo-progress>
+                        <div class="photo-progress-steps" data-session-ranking-photo-steps></div>
+                        <p class="photo-progress-label" data-session-ranking-photo-indicator></p>
+                      </div>
+                      <div class="session-ranking-image-frame" data-session-ranking-photo-navigator>
+                        <img class="session-ranking-image" data-session-ranking-image alt="Ranked dress preview" />
+                      </div>
                     </div>
-                    <div class="session-ranking-photo-actions">
-                      <button class="button secondary" type="button" data-session-ranking-photo-prev>Previous photo</button>
-                      <button class="button secondary" type="button" data-session-ranking-photo-next>Next photo</button>
-                    </div>
-                    <p class="store-detail-meta photo-count-indicator" data-session-ranking-photo-indicator></p>
                     <div class="session-ranking-actions">
                       <button class="button secondary" type="button" data-session-ranking-prev>←</button>
                       <button class="button secondary" type="button" data-session-ranking-next>→</button>

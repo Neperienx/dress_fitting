@@ -1206,7 +1206,7 @@ h1 {
 
 .swipe-chip {
   position: absolute;
-  top: 0.8rem;
+  top: 1.7rem;
   left: 0.8rem;
   background: rgba(46, 31, 46, 0.82);
   color: #fff;
@@ -1216,11 +1216,40 @@ h1 {
   z-index: 1;
 }
 
+.swipe-image-frame,
+.session-ranking-image-frame {
+  position: relative;
+  cursor: pointer;
+}
+
+.swipe-image-frame::before,
+.swipe-image-frame::after,
+.session-ranking-image-frame::before,
+.session-ranking-image-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 1;
+}
+
+.swipe-image-frame::before,
+.session-ranking-image-frame::before {
+  left: 0;
+}
+
+.swipe-image-frame::after,
+.session-ranking-image-frame::after {
+  right: 0;
+}
+
 .swipe-image {
   width: 100%;
   height: 300px;
   object-fit: contain;
   background: #fff;
+  display: block;
 }
 
 .swipe-caption {
@@ -1238,6 +1267,41 @@ h1 {
 .photo-count-indicator {
   text-align: center;
   font-weight: 600;
+}
+
+.photo-progress {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.photo-progress-steps {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 0.35rem;
+}
+
+.photo-progress-step {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.photo-progress-step.is-active {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.photo-progress-label {
+  margin: 0;
+  justify-self: end;
+  font-size: 0.78rem;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  font-weight: 700;
 }
 
 .swipe-actions {
@@ -1321,6 +1385,7 @@ h1 {
 }
 
 .session-ranking-viewer {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
