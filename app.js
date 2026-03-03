@@ -26,6 +26,8 @@ const sessionMessage = document.querySelector('[data-session-message]');
 const swipeWorkspace = document.querySelector('[data-swipe-workspace]');
 const swipeCategoryChip = document.querySelector('[data-swipe-category-chip]');
 const swipeImage = document.querySelector('[data-swipe-image]');
+const swipePhotoNav = document.querySelector('[data-swipe-photo-nav]');
+const swipePhotoIndicator = document.querySelector('[data-swipe-photo-indicator]');
 const swipeCaption = document.querySelector('[data-swipe-caption]');
 const swipeProgress = document.querySelector('[data-swipe-progress]');
 const swipeSelectedTags = document.querySelector('[data-swipe-selected-tags]');
@@ -36,6 +38,8 @@ const sessionBars = document.querySelector('[data-session-bars]');
 const sessionResultTabs = Array.from(document.querySelectorAll('[data-session-results-tab]'));
 const sessionResultPanels = Array.from(document.querySelectorAll('[data-session-results-panel]'));
 const sessionRankingImage = document.querySelector('[data-session-ranking-image]');
+const sessionRankingPhotoNav = document.querySelector('[data-session-ranking-photo-nav]');
+const sessionRankingPhotoIndicator = document.querySelector('[data-session-ranking-photo-indicator]');
 const sessionRankingCaption = document.querySelector('[data-session-ranking-caption]');
 const sessionRankingScore = document.querySelector('[data-session-ranking-score]');
 const sessionRankingPosition = document.querySelector('[data-session-ranking-position]');
@@ -296,12 +300,29 @@ const resolvePhotoCategory = (photoPath, tagToCategoryMap, fallbackCategories = 
   return 'General Style';
 };
 
+const renderPhotoIndicator = (container, total, currentIndex) => {
+  if (!container) {
+    return;
+  }
+  container.innerHTML = '';
+  const safeTotal = Math.max(0, total || 0);
+  for (let index = 0; index < safeTotal; index += 1) {
+    const step = document.createElement('span');
+    step.className = `profile-photo-step${index === currentIndex ? ' is-active' : ''}`;
+    container.appendChild(step);
+  }
+};
+
 const renderSwipeCard = () => {
   if (!swipeWorkspace || !swipeImage || !swipeCaption || !swipeProgress || !swipeCategoryChip || !dislikeButton || !likeButton) {
     return;
   }
   if (!swipeDeck.length || swipeIndex >= swipeDeck.length) {
     swipeWorkspace.classList.add('is-hidden');
+    renderPhotoIndicator(swipePhotoIndicator, 0, 0);
+    if (swipePhotoNav) {
+      swipePhotoNav.disabled = true;
+    }
     return;
   }
 
@@ -310,6 +331,10 @@ const renderSwipeCard = () => {
   swipeCaption.textContent = current.fileName;
   swipeCategoryChip.textContent = current.category;
   swipeProgress.textContent = `Look ${swipeIndex + 1} of ${swipeDeck.length}`;
+  renderPhotoIndicator(swipePhotoIndicator, swipeDeck.length, swipeIndex);
+  if (swipePhotoNav) {
+    swipePhotoNav.disabled = swipeDeck.length <= 1;
+  }
   if (swipeSelectedTags) {
     const tags = Array.isArray(current.tags) ? current.tags : [];
     swipeSelectedTags.textContent = tags.length
@@ -457,6 +482,10 @@ const renderRankedStoreDress = () => {
     sessionRankingPosition.textContent = '';
     sessionRankingPrev.disabled = true;
     sessionRankingNext.disabled = true;
+    renderPhotoIndicator(sessionRankingPhotoIndicator, 0, 0);
+    if (sessionRankingPhotoNav) {
+      sessionRankingPhotoNav.disabled = true;
+    }
     return;
   }
 
@@ -468,6 +497,10 @@ const renderRankedStoreDress = () => {
   sessionRankingPosition.textContent = `Dress ${rankedStoreDressIndex + 1} of ${rankedStoreDresses.length}`;
   sessionRankingPrev.disabled = rankedStoreDressIndex === 0;
   sessionRankingNext.disabled = rankedStoreDressIndex >= rankedStoreDresses.length - 1;
+  renderPhotoIndicator(sessionRankingPhotoIndicator, rankedStoreDresses.length, rankedStoreDressIndex);
+  if (sessionRankingPhotoNav) {
+    sessionRankingPhotoNav.disabled = rankedStoreDresses.length <= 1;
+  }
 };
 
 const renderSessionResults = () => {
@@ -1613,6 +1646,38 @@ if (sessionResultTabs.length) {
         setSessionResultsTab(tabId);
       }
     });
+  });
+}
+
+if (swipePhotoNav) {
+  swipePhotoNav.addEventListener('click', (event) => {
+    if (!swipeDeck.length) {
+      return;
+    }
+    const bounds = swipePhotoNav.getBoundingClientRect();
+    const clickedLeft = event.clientX - bounds.left < bounds.width / 2;
+    const nextIndex = clickedLeft ? swipeIndex - 1 : swipeIndex + 1;
+    if (nextIndex < 0 || nextIndex >= swipeDeck.length) {
+      return;
+    }
+    swipeIndex = nextIndex;
+    renderSwipeCard();
+  });
+}
+
+if (sessionRankingPhotoNav) {
+  sessionRankingPhotoNav.addEventListener('click', (event) => {
+    if (!rankedStoreDresses.length) {
+      return;
+    }
+    const bounds = sessionRankingPhotoNav.getBoundingClientRect();
+    const clickedLeft = event.clientX - bounds.left < bounds.width / 2;
+    const nextIndex = clickedLeft ? rankedStoreDressIndex - 1 : rankedStoreDressIndex + 1;
+    if (nextIndex < 0 || nextIndex >= rankedStoreDresses.length) {
+      return;
+    }
+    rankedStoreDressIndex = nextIndex;
+    renderRankedStoreDress();
   });
 }
 
