@@ -56,6 +56,8 @@ const swipeSelectedTags = document.querySelector('[data-swipe-selected-tags]');
 const swipePhotoPrev = document.querySelector('[data-swipe-photo-prev]');
 const swipePhotoNext = document.querySelector('[data-swipe-photo-next]');
 const swipePhotoIndicator = document.querySelector('[data-swipe-photo-indicator]');
+const swipePhotoSteps = document.querySelector('[data-swipe-photo-steps]');
+const swipePhotoNavigator = document.querySelector('[data-swipe-photo-navigator]');
 const dislikeButton = document.querySelector('[data-swipe-dislike]');
 const likeButton = document.querySelector('[data-swipe-like]');
 const sessionResults = document.querySelector('[data-session-results]');
@@ -71,6 +73,8 @@ const sessionRankingNext = document.querySelector('[data-session-ranking-next]')
 const sessionRankingPhotoPrev = document.querySelector('[data-session-ranking-photo-prev]');
 const sessionRankingPhotoNext = document.querySelector('[data-session-ranking-photo-next]');
 const sessionRankingPhotoIndicator = document.querySelector('[data-session-ranking-photo-indicator]');
+const sessionRankingPhotoSteps = document.querySelector('[data-session-ranking-photo-steps]');
+const sessionRankingPhotoNavigator = document.querySelector('[data-session-ranking-photo-navigator]');
 const adminGrid = document.querySelector('[data-admin-grid]');
 const adminMessage = document.querySelector('[data-admin-message]');
 const sessionKey = 'bridalStudioCurrentUser';
@@ -799,6 +803,20 @@ const loadDefaultSessionDeck = async (limit, tagMap, fallbackCategories) => {
   });
 };
 
+const renderPhotoProgressSteps = (container, totalPhotos, activeIndex) => {
+  if (!container) {
+    return;
+  }
+  container.innerHTML = '';
+  const count = Math.max(totalPhotos, 1);
+  for (let index = 0; index < count; index += 1) {
+    const step = document.createElement('span');
+    step.className = 'photo-progress-step';
+    step.classList.toggle('is-active', index === activeIndex);
+    container.appendChild(step);
+  }
+};
+
 const renderSwipeCard = () => {
   if (!swipeWorkspace || !swipeImage || !swipeCaption || !swipeProgress || !swipeCategoryChip || !dislikeButton || !likeButton) {
     return;
@@ -824,6 +842,7 @@ const renderSwipeCard = () => {
   if (swipePhotoIndicator) {
     swipePhotoIndicator.textContent = `${swipePhotoIndex + 1}/${Math.max(photoPaths.length, 1)}`;
   }
+  renderPhotoProgressSteps(swipePhotoSteps, photoPaths.length, swipePhotoIndex);
   if (swipePhotoPrev) {
     swipePhotoPrev.disabled = swipePhotoIndex === 0;
   }
@@ -1000,6 +1019,7 @@ const renderRankedStoreDress = () => {
     if (sessionRankingPhotoIndicator) {
       sessionRankingPhotoIndicator.textContent = '';
     }
+    renderPhotoProgressSteps(sessionRankingPhotoSteps, 0, 0);
     return;
   }
 
@@ -1019,6 +1039,7 @@ const renderRankedStoreDress = () => {
   if (sessionRankingPhotoIndicator) {
     sessionRankingPhotoIndicator.textContent = `${rankedStoreDressPhotoIndex + 1}/${Math.max(photos.length, 1)}`;
   }
+  renderPhotoProgressSteps(sessionRankingPhotoSteps, photos.length, rankedStoreDressPhotoIndex);
   sessionRankingPrev.disabled = rankedStoreDressIndex === 0;
   sessionRankingNext.disabled = rankedStoreDressIndex >= rankedStoreDresses.length - 1;
   sessionRankingPhotoPrev.disabled = rankedStoreDressPhotoIndex === 0;
@@ -2645,6 +2666,31 @@ if (swipePhotoNext) {
   });
 }
 
+if (swipePhotoNavigator) {
+  swipePhotoNavigator.addEventListener('click', (event) => {
+    const rect = swipePhotoNavigator.getBoundingClientRect();
+    const clickOffset = event.clientX - rect.left;
+    const clickedRightHalf = clickOffset >= rect.width / 2;
+    const current = swipeDeck[swipeIndex];
+    const photoCount = Array.isArray(current?.photoPaths) && current.photoPaths.length
+      ? current.photoPaths.length
+      : 1;
+
+    if (clickedRightHalf) {
+      if (swipePhotoIndex >= photoCount - 1) {
+        return;
+      }
+      swipePhotoIndex += 1;
+    } else {
+      if (swipePhotoIndex <= 0) {
+        return;
+      }
+      swipePhotoIndex -= 1;
+    }
+    renderSwipeCard();
+  });
+}
+
 if (sessionResultTabs.length) {
   sessionResultTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -2696,6 +2742,29 @@ if (sessionRankingPhotoNext) {
       return;
     }
     rankedStoreDressPhotoIndex += 1;
+    renderRankedStoreDress();
+  });
+}
+
+if (sessionRankingPhotoNavigator) {
+  sessionRankingPhotoNavigator.addEventListener('click', (event) => {
+    const rect = sessionRankingPhotoNavigator.getBoundingClientRect();
+    const clickOffset = event.clientX - rect.left;
+    const clickedRightHalf = clickOffset >= rect.width / 2;
+    const current = rankedStoreDresses[rankedStoreDressIndex];
+    const photoCount = Array.isArray(current?.photos) ? current.photos.length : 0;
+
+    if (clickedRightHalf) {
+      if (rankedStoreDressPhotoIndex >= photoCount - 1) {
+        return;
+      }
+      rankedStoreDressPhotoIndex += 1;
+    } else {
+      if (rankedStoreDressPhotoIndex <= 0) {
+        return;
+      }
+      rankedStoreDressPhotoIndex -= 1;
+    }
     renderRankedStoreDress();
   });
 }
