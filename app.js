@@ -48,6 +48,9 @@ const teamMemberList = document.querySelector('[data-team-member-list]');
 const sessionRouteGrid = document.querySelector('[data-session-route-grid]');
 const sessionRouteMessage = document.querySelector('[data-session-route-message]');
 const swipeWorkspace = document.querySelector('[data-swipe-workspace]');
+const swipeCard = document.querySelector('[data-swipe-card]');
+const swipeOverlay = document.querySelector('[data-swipe-overlay]');
+const swipeOverlayIcon = document.querySelector('[data-swipe-overlay-icon]');
 const swipeCategoryChip = document.querySelector('[data-swipe-category-chip]');
 const swipeImage = document.querySelector('[data-swipe-image]');
 const swipeCaption = document.querySelector('[data-swipe-caption]');
@@ -106,6 +109,12 @@ let linkedStores = [];
 
 let swipeDeck = [];
 let swipeIndex = 0;
+let swipeDragPointerId = null;
+let swipeDragStartX = 0;
+let swipeDragDeltaX = 0;
+let suppressSwipeNavigatorClick = false;
+const SWIPE_DRAG_TRIGGER_PX = 110;
+const SWIPE_DRAG_HINT_PX = 16;
 let swipePhotoIndex = 0;
 let swipeLikes = [];
 let swipeDislikes = [];
@@ -828,6 +837,46 @@ const renderPhotoProgressSteps = (container, totalPhotos, activeIndex) => {
   }
 };
 
+const resetSwipeCardGesture = () => {
+  if (swipeCard) {
+    swipeCard.style.transform = '';
+  }
+  if (swipeOverlay) {
+    swipeOverlay.classList.remove('is-active', 'like', 'dislike');
+    swipeOverlay.style.opacity = '';
+  }
+  if (swipeOverlayIcon) {
+    swipeOverlayIcon.textContent = '';
+  }
+};
+
+const updateSwipeCardGesture = (deltaX) => {
+  if (!swipeCard) {
+    return;
+  }
+  const boundedDelta = Math.max(Math.min(deltaX, SWIPE_DRAG_TRIGGER_PX * 1.35), -SWIPE_DRAG_TRIGGER_PX * 1.35);
+  const absDelta = Math.abs(boundedDelta);
+  const direction = boundedDelta > 0 ? 'like' : boundedDelta < 0 ? 'dislike' : '';
+  const progress = Math.min(absDelta / SWIPE_DRAG_TRIGGER_PX, 1);
+
+  swipeCard.style.transform = `translateX(${boundedDelta}px) rotate(${boundedDelta / 22}deg)`;
+
+  if (!swipeOverlay || !swipeOverlayIcon || !direction || absDelta < SWIPE_DRAG_HINT_PX) {
+    if (swipeOverlay) {
+      swipeOverlay.classList.remove('is-active', 'like', 'dislike');
+    }
+    if (swipeOverlayIcon) {
+      swipeOverlayIcon.textContent = '';
+    }
+    return;
+  }
+
+  swipeOverlay.classList.add('is-active', direction);
+  swipeOverlay.classList.remove(direction === 'like' ? 'dislike' : 'like');
+  swipeOverlay.style.opacity = String(0.3 + progress * 0.7);
+  swipeOverlayIcon.textContent = direction === 'like' ? '👍' : '👎';
+};
+
 const renderSwipeCard = () => {
   if (!swipeWorkspace || !swipeImage || !swipeCaption || !swipeProgress || !swipeCategoryChip || !dislikeButton || !likeButton) {
     return;
@@ -837,6 +886,7 @@ const renderSwipeCard = () => {
     return;
   }
 
+  resetSwipeCardGesture();
   const current = swipeDeck[swipeIndex];
   const photoPaths = Array.isArray(current.photoPaths) && current.photoPaths.length
     ? current.photoPaths
@@ -1162,6 +1212,7 @@ const handleSwipe = (direction) => {
     return;
   }
   const current = swipeDeck[swipeIndex];
+  resetSwipeCardGesture();
   if (direction === 'like') {
     swipeLikes.push(current);
   } else {
@@ -2663,6 +2714,59 @@ if (likeButton) {
   likeButton.addEventListener('click', () => handleSwipe('like'));
 }
 
+if (swipeCard) {
+  swipeCard.addEventListener('pointerdown', (event) => {
+    if (swipeWorkspace?.classList.contains('is-hidden') || !swipeDeck.length || swipeIndex >= swipeDeck.length) {
+      return;
+    }
+    if (event.button !== 0) {
+      return;
+    }
+    swipeDragPointerId = event.pointerId;
+    swipeDragStartX = event.clientX;
+    swipeDragDeltaX = 0;
+    suppressSwipeNavigatorClick = false;
+    swipeCard.style.transition = 'none';
+    swipeCard.setPointerCapture(event.pointerId);
+  });
+
+  swipeCard.addEventListener('pointermove', (event) => {
+    if (swipeDragPointerId !== event.pointerId) {
+      return;
+    }
+    swipeDragDeltaX = event.clientX - swipeDragStartX;
+    if (Math.abs(swipeDragDeltaX) > 4) {
+      suppressSwipeNavigatorClick = true;
+    }
+    updateSwipeCardGesture(swipeDragDeltaX);
+  });
+
+  const endSwipeDrag = (event) => {
+    if (swipeDragPointerId !== event.pointerId) {
+      return;
+    }
+    const deltaX = swipeDragDeltaX;
+    swipeDragPointerId = null;
+    swipeDragStartX = 0;
+    swipeDragDeltaX = 0;
+    swipeCard.style.transition = '';
+
+    if (Math.abs(deltaX) >= SWIPE_DRAG_TRIGGER_PX) {
+      handleSwipe(deltaX > 0 ? 'like' : 'dislike');
+      return;
+    }
+    resetSwipeCardGesture();
+    if (suppressSwipeNavigatorClick) {
+      setTimeout(() => {
+        suppressSwipeNavigatorClick = false;
+      }, 0);
+    }
+  };
+
+  swipeCard.addEventListener('pointerup', endSwipeDrag);
+  swipeCard.addEventListener('pointercancel', endSwipeDrag);
+}
+
 if (swipePhotoPrev) {
   swipePhotoPrev.addEventListener('click', () => {
     if (swipePhotoIndex <= 0) {
@@ -2689,6 +2793,10 @@ if (swipePhotoNext) {
 
 if (swipePhotoNavigator) {
   swipePhotoNavigator.addEventListener('click', (event) => {
+    if (suppressSwipeNavigatorClick) {
+      suppressSwipeNavigatorClick = false;
+      return;
+    }
     const rect = swipePhotoNavigator.getBoundingClientRect();
     const clickOffset = event.clientX - rect.left;
     const clickedRightHalf = clickOffset >= rect.width / 2;
