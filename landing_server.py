@@ -1348,16 +1348,12 @@ def render_store_details(copy: dict) -> str:
                     <p class="lead">{escape(copy.get("sessionSubtitle") or "Start a quick like/dislike swiping session from your default dress folder.")}</p>
                   </div>
                 </div>
-              <div class="session-store-picker is-hidden" data-session-store-picker>
+              <div class="session-store-picker" data-session-store-picker>
                 <label>
-                  For what store would you like to initiate a session?
-                  <select data-session-store-select></select>
-                </label>
-                <label>
-                  Number of dresses in session
+                  How many pictures in the session?
                   <input type="number" min="1" step="1" value="10" data-session-dress-count />
                 </label>
-                <button class="button secondary" type="button" data-session-store-confirm>Use this store</button>
+                <p class="store-detail-location">Session will use the currently selected store.</p>
               </div>
               <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
               <div class="swipe-workspace is-hidden" data-swipe-workspace>
