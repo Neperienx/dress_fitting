@@ -1362,6 +1362,9 @@ def render_store_details(copy: dict) -> str:
               <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
               <div class="swipe-workspace is-hidden" data-swipe-workspace>
                 <div class="swipe-card" data-swipe-card>
+                  <div class="swipe-sentiment-overlay" aria-hidden="true" data-swipe-overlay>
+                    <span class="swipe-sentiment-overlay-icon" data-swipe-overlay-icon></span>
+                  </div>
                   <div class="photo-progress" data-swipe-photo-progress>
                     <div class="photo-progress-steps" data-swipe-photo-steps></div>
                     <p class="photo-progress-label" data-swipe-photo-indicator></p>

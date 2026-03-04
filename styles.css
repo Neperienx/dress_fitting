@@ -1202,6 +1202,45 @@ h1 {
   border: 1px solid var(--border);
   min-height: 340px;
   box-shadow: 0 12px 24px rgba(58, 34, 58, 0.1);
+  touch-action: pan-y;
+  transition: transform 140ms ease;
+}
+
+.swipe-sentiment-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 3;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.75);
+  transition: opacity 120ms ease, transform 120ms ease;
+  pointer-events: none;
+}
+
+.swipe-sentiment-overlay.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.swipe-sentiment-overlay.like {
+  background: rgba(34, 92, 255, 0.16);
+  border: 2px solid rgba(34, 92, 255, 0.8);
+  color: rgb(34, 92, 255);
+}
+
+.swipe-sentiment-overlay.dislike {
+  background: rgba(220, 38, 38, 0.16);
+  border: 2px solid rgba(220, 38, 38, 0.8);
+  color: rgb(220, 38, 38);
+}
+
+.swipe-sentiment-overlay-icon {
+  font-size: 1.2rem;
 }
 
 .swipe-chip {
