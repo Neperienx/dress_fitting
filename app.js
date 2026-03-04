@@ -1014,7 +1014,7 @@ const setSessionResultsTab = (tabId) => {
 };
 
 const renderRankedStoreDress = () => {
-  if (!sessionRankingImage || !sessionRankingCaption || !sessionRankingScore || !sessionRankingPosition || !sessionRankingPrev || !sessionRankingNext || !sessionRankingPhotoPrev || !sessionRankingPhotoNext) {
+  if (!sessionRankingImage || !sessionRankingCaption || !sessionRankingScore || !sessionRankingPosition || !sessionRankingPrev || !sessionRankingNext) {
     return;
   }
 
@@ -1025,8 +1025,12 @@ const renderRankedStoreDress = () => {
     sessionRankingPosition.textContent = '';
     sessionRankingPrev.disabled = true;
     sessionRankingNext.disabled = true;
-    sessionRankingPhotoPrev.disabled = true;
-    sessionRankingPhotoNext.disabled = true;
+    if (sessionRankingPhotoPrev) {
+      sessionRankingPhotoPrev.disabled = true;
+    }
+    if (sessionRankingPhotoNext) {
+      sessionRankingPhotoNext.disabled = true;
+    }
     if (sessionRankingPhotoIndicator) {
       sessionRankingPhotoIndicator.textContent = '';
     }
@@ -1043,6 +1047,8 @@ const renderRankedStoreDress = () => {
   const tagText = current.normalizedTags.length ? current.normalizedTags.join(', ') : 'none';
   if (currentPhoto?.photo_path) {
     sessionRankingImage.src = resolvePhotoUrl(currentPhoto.photo_path);
+  } else {
+    sessionRankingImage.removeAttribute('src');
   }
   sessionRankingCaption.textContent = `Top match tags: ${tagText}`;
   sessionRankingScore.textContent = `Match score: ${current.score > 0 ? `+${current.score}` : current.score}`;
@@ -1053,8 +1059,12 @@ const renderRankedStoreDress = () => {
   renderPhotoProgressSteps(sessionRankingPhotoSteps, photos.length, rankedStoreDressPhotoIndex);
   sessionRankingPrev.disabled = rankedStoreDressIndex === 0;
   sessionRankingNext.disabled = rankedStoreDressIndex >= rankedStoreDresses.length - 1;
-  sessionRankingPhotoPrev.disabled = rankedStoreDressPhotoIndex === 0;
-  sessionRankingPhotoNext.disabled = rankedStoreDressPhotoIndex >= photos.length - 1;
+  if (sessionRankingPhotoPrev) {
+    sessionRankingPhotoPrev.disabled = rankedStoreDressPhotoIndex === 0;
+  }
+  if (sessionRankingPhotoNext) {
+    sessionRankingPhotoNext.disabled = rankedStoreDressPhotoIndex >= photos.length - 1;
+  }
 };
 
 const renderSessionResults = () => {
