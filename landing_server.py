@@ -1354,6 +1354,7 @@ def render_store_details(copy: dict) -> str:
                   <input type="number" min="1" step="1" value="10" data-session-dress-count />
                 </label>
                 <p class="store-detail-location">Session will use the currently selected store.</p>
+                <button class="button" type="button" data-start-session-button>Start Session</button>
               </div>
               <p class="auth-message form-message" data-session-message role="status" aria-live="polite"></p>
               <div class="swipe-workspace is-hidden" data-swipe-workspace>
