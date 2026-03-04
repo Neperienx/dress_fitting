@@ -35,10 +35,7 @@ const dressMetadataMessage = dressMetadataForm?.querySelector('[data-dress-metad
 const dressTagOptionsContainer = dressMetadataForm?.querySelector('[data-dress-tag-options]');
 const startSessionButton = document.querySelector('[data-start-session-button]');
 const sessionMessage = document.querySelector('[data-session-message]');
-const sessionStorePicker = document.querySelector('[data-session-store-picker]');
-const sessionStoreSelect = document.querySelector('[data-session-store-select]');
 const sessionDressCountInput = document.querySelector('[data-session-dress-count]');
-const sessionStoreConfirm = document.querySelector('[data-session-store-confirm]');
 const teamStorePicker = document.querySelector('[data-team-store-picker]');
 const teamStoreGrid = document.querySelector('[data-team-store-grid]');
 const teamMessage = document.querySelector('[data-team-message]');
@@ -607,27 +604,9 @@ const getManageableStores = () => {
 };
 
 const updateSessionStorePicker = () => {
-  if (!sessionStorePicker || !sessionStoreSelect) {
+  if (!sessionDressCountInput) {
     return;
   }
-  const manageableStores = getManageableStores();
-  sessionStoreSelect.innerHTML = '';
-
-  manageableStores.forEach((store) => {
-    const option = document.createElement('option');
-    option.value = String(store.id);
-    option.textContent = `${store.name} — ${store.location}`;
-    sessionStoreSelect.appendChild(option);
-  });
-
-  if (manageableStores.length > 1) {
-    sessionStorePicker.classList.remove('is-hidden');
-    const selectedFromDetails = manageableStores.find((store) => String(store.id) === selectedStoreId);
-    sessionStoreSelect.value = selectedFromDetails ? String(selectedFromDetails.id) : String(manageableStores[0].id);
-    return;
-  }
-
-  sessionStorePicker.classList.add('is-hidden');
 };
 
 const setAdminMessage = (message, type) => {
@@ -1328,14 +1307,20 @@ const handleStartSession = () => {
     return;
   }
 
-  if (manageableStores.length === 1) {
-    activateStoreById(manageableStores[0].id);
-    startDefaultSession(parseSessionDressCount());
+  const selectedManageableStore = manageableStores.find((store) => String(store.id) === String(selectedStoreId));
+  const storeToRun = selectedManageableStore || manageableStores[0];
+  if (!storeToRun) {
+    setSessionMessage('Unable to load this store inventory right now.', 'error');
     return;
   }
 
-  updateSessionStorePicker();
-  setSessionMessage('For what store would you like to initiate a session?', '');
+  const didActivateStore = activateStoreById(storeToRun.id);
+  if (!didActivateStore) {
+    setSessionMessage('Unable to load this store inventory right now.', 'error');
+    return;
+  }
+
+  startDefaultSession(parseSessionDressCount());
 };
 
 const setDressPhotoMessage = (message, type) => {
@@ -2684,22 +2669,6 @@ const loadAdminPage = async () => {
 
 if (startSessionButton) {
   startSessionButton.addEventListener('click', handleStartSession);
-}
-
-if (sessionStoreConfirm) {
-  sessionStoreConfirm.addEventListener('click', () => {
-    const storeId = sessionStoreSelect?.value;
-    if (!storeId) {
-      setSessionMessage('Please select a store first.', 'error');
-      return;
-    }
-    const didActivate = activateStoreById(storeId);
-    if (!didActivate) {
-      setSessionMessage('Unable to load this store. Please choose another one.', 'error');
-      return;
-    }
-    startDefaultSession(parseSessionDressCount());
-  });
 }
 
 if (sessionDressCountInput && !sessionDressCountInput.value) {
