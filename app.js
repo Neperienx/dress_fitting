@@ -33,7 +33,7 @@ const dressAutolabelAllButton = dressMetadataForm?.querySelector('[data-dress-au
 const dressAutolabelOverwriteButton = dressMetadataForm?.querySelector('[data-dress-autolabel-overwrite-button]');
 const dressMetadataMessage = dressMetadataForm?.querySelector('[data-dress-metadata-message]');
 const dressTagOptionsContainer = dressMetadataForm?.querySelector('[data-dress-tag-options]');
-const startSessionButton = document.querySelector('[data-start-session-button]');
+const startSessionButtons = Array.from(document.querySelectorAll('[data-start-session-button]'));
 const sessionMessage = document.querySelector('[data-session-message]');
 const sessionDressCountInput = document.querySelector('[data-session-dress-count]');
 const teamStorePicker = document.querySelector('[data-team-store-picker]');
@@ -1758,9 +1758,9 @@ const updateDetailsSummary = (store) => {
     if (dressAutolabelOverwriteButton) {
       dressAutolabelOverwriteButton.disabled = true;
     }
-    if (startSessionButton) {
-      startSessionButton.disabled = true;
-    }
+    startSessionButtons.forEach((button) => {
+      button.disabled = true;
+    });
     if (swipeWorkspace) {
       swipeWorkspace.classList.add('is-hidden');
     }
@@ -1833,9 +1833,9 @@ const updateDetailsSummary = (store) => {
     dressAutolabelOverwriteButton.disabled = !activeStoreCanManagePhotos;
   }
   const hasAnyManageableStore = getManageableStores().length > 0;
-  if (startSessionButton) {
-    startSessionButton.disabled = !hasAnyManageableStore;
-  }
+  startSessionButtons.forEach((button) => {
+    button.disabled = !hasAnyManageableStore;
+  });
   if (!activeStoreCanManagePhotos) {
     if (swipeWorkspace) {
       swipeWorkspace.classList.add('is-hidden');
@@ -2667,9 +2667,9 @@ const loadAdminPage = async () => {
   }
 };
 
-if (startSessionButton) {
-  startSessionButton.addEventListener('click', handleStartSession);
-}
+startSessionButtons.forEach((button) => {
+  button.addEventListener('click', handleStartSession);
+});
 
 if (sessionDressCountInput && !sessionDressCountInput.value) {
   sessionDressCountInput.value = String(DEFAULT_SESSION_DRESS_COUNT);
