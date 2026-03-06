@@ -2736,7 +2736,7 @@ if (swipeCard) {
       return;
     }
     swipeDragDeltaX = event.clientX - swipeDragStartX;
-    if (Math.abs(swipeDragDeltaX) > 4) {
+    if (Math.abs(swipeDragDeltaX) >= SWIPE_DRAG_HINT_PX) {
       suppressSwipeNavigatorClick = true;
     }
     updateSwipeCardGesture(swipeDragDeltaX);
@@ -2752,6 +2752,7 @@ if (swipeCard) {
     swipeDragDeltaX = 0;
     swipeCard.style.transition = '';
 
+    const hasDragIntent = Math.abs(deltaX) >= SWIPE_DRAG_HINT_PX;
     if (Math.abs(deltaX) >= SWIPE_DRAG_TRIGGER_PX) {
       handleSwipe(deltaX > 0 ? 'like' : 'dislike');
       return;
@@ -2759,7 +2760,7 @@ if (swipeCard) {
 
     const tapTarget = event.target;
     const isControlTap = tapTarget instanceof Element && tapTarget.closest('button, a, input, select, textarea, label');
-    if (!suppressSwipeNavigatorClick && !isControlTap) {
+    if (!hasDragIntent && !suppressSwipeNavigatorClick && !isControlTap) {
       navigateSwipePhotoFromPoint(event.clientX, swipeCard);
     }
 
