@@ -1211,6 +1211,38 @@ const handleSwipe = (direction) => {
   renderSwipeCard();
 };
 
+const shiftSwipePhoto = (direction) => {
+  const current = swipeDeck[swipeIndex];
+  const photoCount = Array.isArray(current?.photoPaths) && current.photoPaths.length
+    ? current.photoPaths.length
+    : 1;
+
+  if (direction === 'next') {
+    if (swipePhotoIndex >= photoCount - 1) {
+      return;
+    }
+    swipePhotoIndex += 1;
+    renderSwipeCard();
+    return;
+  }
+
+  if (swipePhotoIndex <= 0) {
+    return;
+  }
+  swipePhotoIndex -= 1;
+  renderSwipeCard();
+};
+
+const navigateSwipePhotoFromPoint = (clientX, boundaryElement) => {
+  if (!boundaryElement) {
+    return;
+  }
+  const rect = boundaryElement.getBoundingClientRect();
+  const clickOffset = clientX - rect.left;
+  const clickedRightHalf = clickOffset >= rect.width / 2;
+  shiftSwipePhoto(clickedRightHalf ? 'next' : 'prev');
+};
+
 const startDefaultSession = async (requestedDressCount = DEFAULT_SESSION_DRESS_COUNT) => {
   if (!activeStoreCanManagePhotos) {
     setSessionMessage('Only the store owner can start a session.', 'error');
@@ -2724,6 +2756,13 @@ if (swipeCard) {
       handleSwipe(deltaX > 0 ? 'like' : 'dislike');
       return;
     }
+
+    const tapTarget = event.target;
+    const isControlTap = tapTarget instanceof Element && tapTarget.closest('button, a, input, select, textarea, label');
+    if (!suppressSwipeNavigatorClick && !isControlTap) {
+      navigateSwipePhotoFromPoint(event.clientX, swipeCard);
+    }
+
     resetSwipeCardGesture();
     if (suppressSwipeNavigatorClick) {
       setTimeout(() => {
@@ -2738,25 +2777,13 @@ if (swipeCard) {
 
 if (swipePhotoPrev) {
   swipePhotoPrev.addEventListener('click', () => {
-    if (swipePhotoIndex <= 0) {
-      return;
-    }
-    swipePhotoIndex -= 1;
-    renderSwipeCard();
+    shiftSwipePhoto('prev');
   });
 }
 
 if (swipePhotoNext) {
   swipePhotoNext.addEventListener('click', () => {
-    const current = swipeDeck[swipeIndex];
-    const photoCount = Array.isArray(current?.photoPaths) && current.photoPaths.length
-      ? current.photoPaths.length
-      : 1;
-    if (swipePhotoIndex >= photoCount - 1) {
-      return;
-    }
-    swipePhotoIndex += 1;
-    renderSwipeCard();
+    shiftSwipePhoto('next');
   });
 }
 
@@ -2766,26 +2793,7 @@ if (swipePhotoNavigator) {
       suppressSwipeNavigatorClick = false;
       return;
     }
-    const rect = swipePhotoNavigator.getBoundingClientRect();
-    const clickOffset = event.clientX - rect.left;
-    const clickedRightHalf = clickOffset >= rect.width / 2;
-    const current = swipeDeck[swipeIndex];
-    const photoCount = Array.isArray(current?.photoPaths) && current.photoPaths.length
-      ? current.photoPaths.length
-      : 1;
-
-    if (clickedRightHalf) {
-      if (swipePhotoIndex >= photoCount - 1) {
-        return;
-      }
-      swipePhotoIndex += 1;
-    } else {
-      if (swipePhotoIndex <= 0) {
-        return;
-      }
-      swipePhotoIndex -= 1;
-    }
-    renderSwipeCard();
+    navigateSwipePhotoFromPoint(event.clientX, swipePhotoNavigator);
   });
 }
 
