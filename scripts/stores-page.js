@@ -5,6 +5,13 @@
       return;
     }
 
+    const storesService =
+      typeof window.createStoresService === 'function' ? window.createStoresService() : null;
+
+    if (!storesService) {
+      return;
+    }
+
     const nameInput = storeForm.querySelector('[data-store-name]');
     const locationInput = storeForm.querySelector('[data-store-location]');
     const submitButton = storeForm.querySelector('[data-store-submit]');
@@ -14,33 +21,22 @@
     const joinSubmitButton = joinForm?.querySelector('[data-store-join-submit]');
     const joinMessageEl = joinForm?.querySelector('[data-store-join-message]');
 
-    const setStoreMessage = (message, type) => {
-      if (!messageEl) {
+    const setStatusMessage = (targetEl, message, type) => {
+      if (!targetEl) {
         return;
       }
-      messageEl.textContent = message;
-      messageEl.classList.remove('is-error', 'is-success');
+      targetEl.textContent = message;
+      targetEl.classList.remove('is-error', 'is-success');
       if (type === 'error') {
-        messageEl.classList.add('is-error');
+        targetEl.classList.add('is-error');
       }
       if (type === 'success') {
-        messageEl.classList.add('is-success');
+        targetEl.classList.add('is-success');
       }
     };
 
-    const setJoinMessage = (message, type) => {
-      if (!joinMessageEl) {
-        return;
-      }
-      joinMessageEl.textContent = message;
-      joinMessageEl.classList.remove('is-error', 'is-success');
-      if (type === 'error') {
-        joinMessageEl.classList.add('is-error');
-      }
-      if (type === 'success') {
-        joinMessageEl.classList.add('is-success');
-      }
-    };
+    const setStoreMessage = (message, type) => setStatusMessage(messageEl, message, type);
+    const setJoinMessage = (message, type) => setStatusMessage(joinMessageEl, message, type);
 
     const getCurrentUser = () => getSessionUser();
 
@@ -93,15 +89,8 @@
         return;
       }
       try {
-        const response = await fetch(`/api/stores?owner=${encodeURIComponent(owner)}`);
-        if (!response.ok) {
-          return;
-        }
-        const data = await response.json();
-        if (!Array.isArray(data.stores)) {
-          return;
-        }
-        data.stores.forEach((store) => addStoreTile(store));
+        const stores = await storesService.fetchStoresForOwner(owner);
+        stores.forEach((store) => addStoreTile(store));
       } catch (error) {
         // Ignore fetch errors for now.
       }
@@ -121,19 +110,7 @@
       }
       setStoreMessage('Creating your store...', '');
       try {
-        const response = await fetch('/api/stores', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, location, owner_email: owner }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage =
-            errorData.error || 'Unable to create the store right now.';
-          setStoreMessage(errorMessage, 'error');
-          return;
-        }
-        const store = await response.json();
+        const store = await storesService.createStore({ name, location, owner_email: owner });
         addStoreTile(store);
         if (nameInput) {
           nameInput.value = '';
@@ -143,7 +120,7 @@
         }
         setStoreMessage('Store created and linked to your account.', 'success');
       } catch (error) {
-        setStoreMessage('Unable to create the store right now.', 'error');
+        setStoreMessage(error.message || 'Unable to create the store right now.', 'error');
       }
     };
 
@@ -160,25 +137,17 @@
       }
       setJoinMessage('Linking you to the store...', '');
       try {
-        const response = await fetch('/api/stores/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invite_code: inviteCode, member_email: member }),
+        const store = await storesService.joinStoreByCode({
+          invite_code: inviteCode,
+          member_email: member,
         });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage = errorData.error || 'Unable to join the store right now.';
-          setJoinMessage(errorMessage, 'error');
-          return;
-        }
-        const store = await response.json();
         addStoreTile(store);
         if (joinCodeInput) {
           joinCodeInput.value = '';
         }
         setJoinMessage('You are now linked to this store.', 'success');
       } catch (error) {
-        setJoinMessage('Unable to join the store right now.', 'error');
+        setJoinMessage(error.message || 'Unable to join the store right now.', 'error');
       }
     };
 
