@@ -129,6 +129,40 @@ const sessionService =
     ? window.createSessionService({ storesService })
     : null;
 const aiService = typeof window.createAiService === 'function' ? window.createAiService() : null;
+const inventorySessionEngine =
+  typeof window.createInventorySessionEngine === 'function' ? window.createInventorySessionEngine() : null;
+const inventoryApi = typeof window.createInventoryApi === 'function' ? window.createInventoryApi() : null;
+const uiUtils = window.uiUtils || {};
+
+const getActiveLocale = uiUtils.getActiveLocale || (() => (document.documentElement?.lang || 'en').trim().toLowerCase() || 'en');
+const getLocalizedValue =
+  uiUtils.getLocalizedValue ||
+  ((labels, locale, fallback = 'en') => {
+    if (!labels || typeof labels !== 'object') {
+      return '';
+    }
+    return labels[locale] || labels[fallback] || Object.values(labels)[0] || '';
+  });
+const normalizeToken =
+  uiUtils.normalizeToken ||
+  ((value) =>
+    (value || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-'));
+const resolvePhotoUrl =
+  uiUtils.resolvePhotoUrl ||
+  ((photoPath) => {
+    const rawPath = (photoPath || '').toString().trim();
+    if (!rawPath) {
+      return '';
+    }
+    if (/^(?:https?:|data:|blob:|\/)/i.test(rawPath)) {
+      return rawPath;
+    }
+    return `/${rawPath.replace(/^\.\//, '')}`;
+  });
 
 const updateStoreBranding = (store) => {
   if (!storeBrandNames.length) {
@@ -388,15 +422,6 @@ if (openInventoryButton) {
   });
 }
 
-const getActiveLocale = () => (document.documentElement?.lang || 'en').trim().toLowerCase() || 'en';
-
-const getLocalizedValue = (labels, locale, fallback = 'en') => {
-  if (!labels || typeof labels !== 'object') {
-    return '';
-  }
-  return labels[locale] || labels[fallback] || Object.values(labels)[0] || '';
-};
-
 const setDressMetadataMessage = (message, type) => {
   if (!dressMetadataMessage) {
     return;
@@ -644,169 +669,23 @@ const parseSessionDressCount = () => {
   return rawValue;
 };
 
-const normalizeToken = (value) =>
-  (value || '')
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-');
+const buildTagToCategoryMap = () =>
+  inventorySessionEngine?.buildTagToCategoryMap(tagOptions) || new Map();
 
-const resolvePhotoUrl = (photoPath) => {
-  const rawPath = (photoPath || '').toString().trim();
-  if (!rawPath) {
-    return '';
-  }
-  if (/^(?:https?:|data:|blob:|\/)/i.test(rawPath)) {
-    return rawPath;
-  }
-  return `/${rawPath.replace(/^\.\//, '')}`;
-};
+const resolvePhotoCategory = (photoPath, tagToCategoryMap, fallbackCategories = []) =>
+  inventorySessionEngine?.resolvePhotoCategory(photoPath, tagToCategoryMap, fallbackCategories) || 'General Style';
 
-const buildTagToCategoryMap = () => {
-  const map = new Map();
-  if (!tagOptions || !Array.isArray(tagOptions.categories)) {
-    return map;
-  }
-  tagOptions.categories.forEach((category) => {
-    const label = getLocalizedValue(category.label, 'en', tagOptions.defaultLocale || 'en') || category.id;
-    (category.tags || []).forEach((tag) => {
-      map.set(normalizeToken(tag.id), label);
-      map.set(normalizeToken(getLocalizedValue(tag.label, 'en', tagOptions.defaultLocale || 'en')), label);
-    });
-  });
-  return map;
-};
+const buildInventorySessionCandidates = (store) =>
+  inventorySessionEngine?.buildInventorySessionCandidates(store) || [];
 
-const resolvePhotoCategory = (photoPath, tagToCategoryMap, fallbackCategories = []) => {
-  const tokens = normalizeToken(photoPath).split('-').filter(Boolean);
-  for (const token of tokens) {
-    if (tagToCategoryMap.has(token)) {
-      return tagToCategoryMap.get(token);
-    }
-  }
-  for (let index = 0; index < tokens.length - 1; index += 1) {
-    const pair = `${tokens[index]}-${tokens[index + 1]}`;
-    if (tagToCategoryMap.has(pair)) {
-      return tagToCategoryMap.get(pair);
-    }
-  }
-  if (fallbackCategories.length) {
-    const numericSeed = tokens.join('').split('').reduce((total, char) => total + char.charCodeAt(0), 0);
-    return fallbackCategories[numericSeed % fallbackCategories.length];
-  }
-  return 'General Style';
-};
-
-const buildInventorySessionCandidates = (store) => {
-  const dressPhotos = Array.isArray(store?.dress_photos) ? store.dress_photos : [];
-  const profileMap = new Map();
-
-  dressPhotos.forEach((photo) => {
-    const profileId = String(photo?.dress_profile_id || photo?.photo_path || '');
-    if (!profileId || !photo?.photo_path) {
-      return;
-    }
-    if (!profileMap.has(profileId)) {
-      profileMap.set(profileId, {
-        profileId,
-        coverPhotoPath: photo.photo_path,
-        photoPaths: [],
-        tags: new Set(),
-      });
-    }
-    const profile = profileMap.get(profileId);
-    profile.photoPaths.push(photo.photo_path);
-    (Array.isArray(photo.tags) ? photo.tags : []).forEach((tag) => {
-      if (typeof tag === 'string' && tag.trim()) {
-        profile.tags.add(tag.trim());
-      }
-    });
-  });
-
-  return Array.from(profileMap.values()).map((profile) => ({
-    profileId: profile.profileId,
-    coverPhotoPath: profile.coverPhotoPath,
-    photoPaths: profile.photoPaths,
-    tags: Array.from(profile.tags),
-  }));
-};
-
-const selectProfilesForTagVariety = (profiles, limit) => {
-  const remaining = [...profiles];
-  const selected = [];
-  const coveredTags = new Set();
-
-  while (selected.length < limit && remaining.length) {
-    remaining.sort((first, second) => {
-      const firstGain = first.tags.reduce((count, tag) => count + (coveredTags.has(normalizeToken(tag)) ? 0 : 1), 0);
-      const secondGain = second.tags.reduce((count, tag) => count + (coveredTags.has(normalizeToken(tag)) ? 0 : 1), 0);
-      if (secondGain !== firstGain) {
-        return secondGain - firstGain;
-      }
-      if (second.tags.length !== first.tags.length) {
-        return second.tags.length - first.tags.length;
-      }
-      return first.coverPhotoPath.localeCompare(second.coverPhotoPath);
-    });
-
-    const next = remaining.shift();
-    if (!next) {
-      break;
-    }
-
-    selected.push(next);
-    next.tags.forEach((tag) => {
-      const normalized = normalizeToken(tag);
-      if (normalized) {
-        coveredTags.add(normalized);
-      }
-    });
-  }
-
-  return selected;
-};
+const selectProfilesForTagVariety = (profiles, limit) =>
+  inventorySessionEngine?.selectProfilesForTagVariety(profiles, limit) || [];
 
 const loadDefaultSessionDeck = async (limit, tagMap, fallbackCategories) => {
-  if (limit <= 0) {
+  if (!inventorySessionEngine) {
     return [];
   }
-
-  const response = await fetch('/api/default-dress-photos');
-  if (!response.ok) {
-    throw new Error('Unable to load default dress photos.');
-  }
-  const data = await response.json();
-  const photos = Array.isArray(data.photos) ? data.photos : [];
-  if (!photos.length) {
-    return [];
-  }
-
-  let metadataByPhoto = new Map();
-  try {
-    const metadataResponse = await fetch('/api/default-dress-metadata');
-    if (metadataResponse.ok) {
-      const metadataPayload = await metadataResponse.json();
-      const metadataRows = Array.isArray(metadataPayload.photos) ? metadataPayload.photos : [];
-      metadataByPhoto = new Map(
-        metadataRows.map((row) => [row.photo_path, Array.isArray(row.tags) ? row.tags : []])
-      );
-    }
-  } catch (error) {
-    // Fallback to filename heuristics.
-  }
-
-  return photos.slice(0, limit).map((photoPath) => {
-    const tags = metadataByPhoto.get(photoPath) || [];
-    const categoryFromTag = tags
-      .map((tag) => tagMap.get(normalizeToken(tag)))
-      .find((value) => Boolean(value));
-    return {
-      photoPath,
-      fileName: photoPath.split('/').pop() || photoPath,
-      tags,
-      category: categoryFromTag || resolvePhotoCategory(photoPath, tagMap, fallbackCategories),
-    };
-  });
+  return inventorySessionEngine.loadDefaultSessionDeck({ limit, tagMap, fallbackCategories });
 };
 
 const renderPhotoProgressSteps = (container, totalPhotos, activeIndex) => {
@@ -1396,29 +1275,25 @@ const performDressPhotoUpload = async (files, profileId, options = {}) => {
     return;
   }
 
-  const formData = new FormData();
-  files.forEach((file) => {
-    formData.append('dress_photo', file);
-  });
   setDressPhotoMessage(`Uploading ${files.length} photo${files.length === 1 ? '' : 's'}...`, '');
 
   try {
-    formData.append('owner_email', getSessionUser());
+    const ownerEmail = getSessionUser();
     const resolvedProfileId = profileId || (fallbackToSelectedProfile ? selectedDressProfileId : '');
-    if (resolvedProfileId) {
-      formData.append('dress_profile_id', resolvedProfileId);
-    }
-    const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      setDressPhotoMessage(errorData.error || 'Unable to upload photo right now.', 'error');
+    const request = inventoryApi
+      ? await inventoryApi.uploadDressPhotos({
+          storeId,
+          files,
+          ownerEmail,
+          dressProfileId: resolvedProfileId,
+        })
+      : { ok: false, data: {} };
+    if (!request.ok) {
+      setDressPhotoMessage(request.data.error || 'Unable to upload photo right now.', 'error');
       return;
     }
 
-    const store = await response.json();
+    const store = request.data;
     updateDetailsSummary(store);
     if (dressPhotoInput) {
       dressPhotoInput.value = '';
@@ -1464,21 +1339,19 @@ const openProfileMergeModal = () => {
       }
       setDressMetadataMessage('Merging profiles...', '');
       try {
-        const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/dress-profile-merge`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            owner_email: ownerEmail,
-            source_profile_id: Number(selectedDressProfileId),
-            target_profile_id: Number(profile.id),
-          }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          setDressMetadataMessage(errorData.error || 'Unable to merge profiles right now.', 'error');
+        const request = inventoryApi
+          ? await inventoryApi.mergeDressProfiles({
+              storeId: selectedStoreId,
+              ownerEmail,
+              sourceProfileId: selectedDressProfileId,
+              targetProfileId: profile.id,
+            })
+          : { ok: false, data: {} };
+        if (!request.ok) {
+          setDressMetadataMessage(request.data.error || 'Unable to merge profiles right now.', 'error');
           return;
         }
-        const store = await response.json();
+        const store = request.data;
         closeProfileMergeModal();
         updateDetailsSummary(store);
         setDressMetadataMessage('Profiles merged successfully.', 'success');
@@ -1528,17 +1401,14 @@ const removeDressPhoto = async (storeId, photoUrl) => {
 
   setDressPhotoMessage('Removing photo...', '');
   try {
-    const response = await fetch(`/api/stores/${storeId}/dress-photo`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ photo_path: photoUrl, owner_email: ownerEmail }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      setDressPhotoMessage(errorData.error || 'Unable to remove this photo right now.', 'error');
+    const request = inventoryApi
+      ? await inventoryApi.removeDressPhoto({ storeId, ownerEmail, photoPath: photoUrl })
+      : { ok: false, data: {} };
+    if (!request.ok) {
+      setDressPhotoMessage(request.data.error || 'Unable to remove this photo right now.', 'error');
       return;
     }
-    const store = await response.json();
+    const store = request.data;
     updateDetailsSummary(store);
     if (selectedDressProfileId) {
       const refreshedPhoto = (Array.isArray(store?.dress_photos) ? store.dress_photos : []).find(
@@ -2156,23 +2026,21 @@ if (dressMetadataForm) {
 
     setDressMetadataMessage('Saving metadata...', '');
     try {
-      const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/dress-photo-metadata`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          owner_email: getSessionUser(),
-          photo_path: selectedDressPhotoPath,
-          dress_profile_id: selectedDressProfileId || null,
-          price,
-          tags: selectedTags,
-        }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        setDressMetadataMessage(errorData.error || 'Unable to save metadata right now.', 'error');
+      const request = inventoryApi
+        ? await inventoryApi.saveDressMetadata({
+            storeId: selectedStoreId,
+            ownerEmail: getSessionUser(),
+            photoPath: selectedDressPhotoPath,
+            dressProfileId: selectedDressProfileId,
+            price,
+            tags: selectedTags,
+          })
+        : { ok: false, data: {} };
+      if (!request.ok) {
+        setDressMetadataMessage(request.data.error || 'Unable to save metadata right now.', 'error');
         return;
       }
-      const store = await response.json();
+      const store = request.data;
       updateDetailsSummary(store);
       setDressMetadataMessage('Metadata saved.', 'success');
     } catch (error) {
