@@ -1,5 +1,5 @@
 (() => {
-  const initAuthPage = ({ sessionKey, usersKey, legacyUsersKeys }) => {
+  const initAuthPage = ({ sessionKey, usersKey, legacyUsersKeys, storageAdapter }) => {
     const authCard = document.querySelector('[data-auth-card]');
     if (!authCard) {
       return;
@@ -7,7 +7,7 @@
 
     const storage =
       typeof window.createAuthStorage === 'function'
-        ? window.createAuthStorage({ sessionKey, usersKey, legacyUsersKeys })
+        ? window.createAuthStorage({ sessionKey, usersKey, legacyUsersKeys, storageAdapter })
         : null;
 
     if (!storage) {
