@@ -57,6 +57,17 @@ Notes:
 - If no token in a filename matches a known tag, the app assigns a fallback category.
 - This filename-based tagging affects the default session deck only. Store-uploaded dress photos use explicit metadata tags set in the Stores page.
 
+
+## Front-end modular structure
+To keep the browser app easier to migrate to React Native + Expo later, client-side code is split by responsibility:
+
+- `app.js`: page orchestration and DOM rendering only.
+- `scripts/core/ui-utils.js`: shared UI-safe helpers (status messaging, locale helpers, token normalization, photo URL resolution).
+- `scripts/inventory/inventory-session-engine.js`: inventory/session domain logic (candidate selection, category inference, deck generation).
+- `scripts/inventory/inventory-api.js`: inventory API adapter used by UI flows (upload/remove/merge/metadata).
+
+This separation keeps domain/business logic and server communication decoupled from view code so those pieces can be reused in future mobile clients.
+
 ## Setup details
 1. Copy env vars:
    ```bash
