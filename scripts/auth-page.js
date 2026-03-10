@@ -5,52 +5,18 @@
       return;
     }
 
+    const storage =
+      typeof window.createAuthStorage === 'function'
+        ? window.createAuthStorage({ sessionKey, usersKey, legacyUsersKeys })
+        : null;
+
+    if (!storage) {
+      return;
+    }
+
     const panels = {
       login: authCard.querySelector('[data-auth-panel="login"]'),
       signup: authCard.querySelector('[data-auth-panel="signup"]'),
-    };
-
-    const readUsers = () => {
-      const parseStoredUsers = (key) => {
-        try {
-          const raw = localStorage.getItem(key);
-          if (!raw) {
-            return {};
-          }
-          const parsed = JSON.parse(raw);
-          return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch (error) {
-          return {};
-        }
-      };
-
-      try {
-        const users = parseStoredUsers(usersKey);
-        if (Object.keys(users).length > 0) {
-          return users;
-        }
-
-        for (const key of legacyUsersKeys) {
-          const legacyUsers = parseStoredUsers(key);
-          if (Object.keys(legacyUsers).length > 0) {
-            localStorage.setItem(usersKey, JSON.stringify(legacyUsers));
-            return legacyUsers;
-          }
-        }
-
-        return {};
-      } catch (error) {
-        return {};
-      }
-    };
-
-    const writeUsers = (users) => {
-      try {
-        localStorage.setItem(usersKey, JSON.stringify(users));
-        return true;
-      } catch (error) {
-        return false;
-      }
     };
 
     const setMessage = (panel, message, type) => {
@@ -108,7 +74,7 @@
           setMessage(panels.login, 'Please enter both your username and password.', 'error');
           return;
         }
-        const users = readUsers();
+        const users = storage.readUsers();
         if (!users[username]) {
           setMessage(
             panels.login,
@@ -121,7 +87,7 @@
           setMessage(panels.login, 'That password does not match. Try again.', 'error');
           return;
         }
-        localStorage.setItem(sessionKey, username);
+        storage.persistSessionUser(username);
         setMessage(panels.login, 'Success! Redirecting to your dashboard...', 'success');
         window.location.assign('/stores');
       });
@@ -136,13 +102,13 @@
           setMessage(panels.signup, 'Please enter a username and password to continue.', 'error');
           return;
         }
-        const users = readUsers();
+        const users = storage.readUsers();
         if (users[username]) {
           setMessage(panels.signup, 'This username already exists. Log in instead.', 'error');
           return;
         }
         users[username] = password;
-        const didPersist = writeUsers(users);
+        const didPersist = storage.writeUsers(users);
         if (!didPersist) {
           setMessage(
             panels.signup,
