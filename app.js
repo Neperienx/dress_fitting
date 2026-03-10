@@ -123,6 +123,13 @@ const DEFAULT_SESSION_DRESS_COUNT = 10;
 
 const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
 
+const storesService = typeof window.createStoresService === 'function' ? window.createStoresService() : null;
+const sessionService =
+  typeof window.createSessionService === 'function' && storesService
+    ? window.createSessionService({ storesService })
+    : null;
+const aiService = typeof window.createAiService === 'function' ? window.createAiService() : null;
+
 const updateStoreBranding = (store) => {
   if (!storeBrandNames.length) {
     return;
@@ -1911,24 +1918,25 @@ const loadStoreDetailsPage = async () => {
   }
 
   try {
-    const response = await fetch(`/api/stores?owner=${encodeURIComponent(currentUser)}`);
-    if (!response.ok) {
+    if (!sessionService) {
       updateDetailsSummary(null);
       return;
     }
 
-    const data = await response.json();
-    const stores = Array.isArray(data.stores) ? data.stores : [];
+    const stores = await sessionService.fetchOwnerStores(currentUser);
     linkedStores = stores;
     updateSessionStorePicker();
     renderTeamStorePicker();
     renderStoreSwitcher();
-    const fallbackStoreId = stores.length ? String(stores[0].id) : '';
-    const resolvedStoreId = requestedStoreId || fallbackStoreId;
-    const store = stores.find((candidate) => String(candidate.id) === resolvedStoreId);
-    if (resolvedStoreId && String(resolvedStoreId) !== requestedStoreId) {
+
+    const selection = sessionService.resolveStoreSelection({
+      stores,
+      requestedStoreId,
+    });
+    const store = selection.selectedStore;
+    if (selection.hasSelectionChanged) {
       const nextParams = new URLSearchParams(window.location.search);
-      nextParams.set('store', String(resolvedStoreId));
+      nextParams.set('store', String(selection.resolvedStoreId));
       window.history.replaceState({}, '', `${window.location.pathname}?${nextParams.toString()}`);
     }
     updateDetailsSummary(store || null);
@@ -2015,7 +2023,7 @@ const setAutolabelButtonsDisabled = (disabled) => {
   }
 };
 
-const runBulkAutolabel = async (endpoint, startMessage, completeMessage) => {
+const runBulkAutolabel = async (runRequest, startMessage, completeMessage) => {
   if (!selectedStoreId) {
     setDressMetadataMessage('Select a store first.', 'error');
     return;
@@ -2028,13 +2036,16 @@ const runBulkAutolabel = async (endpoint, startMessage, completeMessage) => {
   setAutolabelButtonsDisabled(true);
   setDressMetadataMessage(startMessage, '');
   try {
-    const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ owner_email: getSessionUser() }),
+    if (!aiService || typeof runRequest !== 'function') {
+      setDressMetadataMessage('Unable to autolabel photos right now.', 'error');
+      return;
+    }
+
+    const { ok, data } = await runRequest({
+      storeId: selectedStoreId,
+      ownerEmail: getSessionUser(),
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
+    if (!ok) {
       setDressMetadataMessage(data.error || 'Unable to autolabel photos right now.', 'error');
       return;
     }
@@ -2066,36 +2077,36 @@ if (dressAutolabelButton) {
     setAutolabelButtonsDisabled(true);
     setDressMetadataMessage('Running autolabel...', '');
     try {
-      const response = await fetch(`/api/stores/${encodeURIComponent(selectedStoreId)}/dress-photo-autolabel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          owner_email: getSessionUser(),
-          photo_path: selectedDressPhotoPath,
-        }),
+      if (!aiService) {
+        setDressMetadataMessage('Unable to autolabel this photo right now.', 'error');
+        return;
+      }
+
+      const { ok, status, data } = await aiService.autolabelPhoto({
+        storeId: selectedStoreId,
+        ownerEmail: getSessionUser(),
+        photoPath: selectedDressPhotoPath,
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const debug = errorData.debug || {};
+      if (!ok) {
+        const debug = data.debug || {};
         const stage = debug.stage ? ` (stage: ${debug.stage})` : '';
         const details = debug.reason || debug.details || debug.openai_error || '';
         if (details) {
           console.error('Autolabel failed', {
             selectedStoreId,
             selectedDressPhotoPath,
-            status: response.status,
-            error: errorData.error,
+            status,
+            error: data.error,
             debug,
           });
         }
         setDressMetadataMessage(
-          `${errorData.error || 'Unable to autolabel this photo right now.'}${stage}${details ? ` — ${details}` : ''}`,
+          `${data.error || 'Unable to autolabel this photo right now.'}${stage}${details ? ` — ${details}` : ''}`,
           'error'
         );
         return;
       }
 
-      const data = await response.json();
       updateDetailsSummary(data.store);
       setDressMetadataMessage('Autolabel complete and tags saved.', 'success');
     } catch (error) {
@@ -2113,13 +2124,13 @@ if (dressAutolabelButton) {
 
 if (dressAutolabelAllButton) {
   dressAutolabelAllButton.addEventListener('click', async () => {
-    await runBulkAutolabel('dress-photo-autolabel-all', 'Running autolabel for non-labeled photos...', 'Autolabel all complete.');
+    await runBulkAutolabel(aiService?.autolabelAll, 'Running autolabel for non-labeled photos...', 'Autolabel all complete.');
   });
 }
 
 if (dressAutolabelOverwriteButton) {
   dressAutolabelOverwriteButton.addEventListener('click', async () => {
-    await runBulkAutolabel('dress-photo-autolabel-overwrite', 'Running autolabel overwrite for all dresses...', 'Autolabel overwrite complete.');
+    await runBulkAutolabel(aiService?.autolabelOverwrite, 'Running autolabel overwrite for all dresses...', 'Autolabel overwrite complete.');
   });
 }
 
@@ -2193,15 +2204,12 @@ const loadSessionRoutePage = async () => {
   sessionRouteGrid.innerHTML = '';
 
   try {
-    const response = await fetch(`/api/stores?owner=${encodeURIComponent(currentUser)}`);
-    if (!response.ok) {
+    if (!sessionService) {
       setSessionRouteMessage('Unable to load stores right now.', 'error');
       return;
     }
 
-    const data = await response.json();
-    const stores = Array.isArray(data.stores) ? data.stores : [];
-    const manageableStores = stores.filter((store) => store && store.owner_email === currentUser);
+    const manageableStores = await sessionService.fetchManageableStores(currentUser);
 
     if (!manageableStores.length) {
       setSessionRouteMessage('Only the store owner can start a session.', 'error');
