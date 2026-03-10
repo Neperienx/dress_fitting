@@ -121,7 +121,10 @@ let rankedStoreDressPhotoIndex = 0;
 let selectedTeamStoreId = '';
 const DEFAULT_SESSION_DRESS_COUNT = 10;
 
-const getSessionUser = () => (localStorage.getItem(sessionKey) || '').trim();
+const storageAdapter =
+  typeof window.createBrowserStorageAdapter === 'function' ? window.createBrowserStorageAdapter() : null;
+
+const getSessionUser = () => ((storageAdapter?.getItem(sessionKey) || '').trim());
 
 const storesService = typeof window.createStoresService === 'function' ? window.createStoresService() : null;
 const sessionService =
@@ -377,7 +380,7 @@ document.addEventListener('click', (event) => {
 
 if (logoutButton) {
   logoutButton.addEventListener('click', () => {
-    localStorage.removeItem(sessionKey);
+    storageAdapter?.removeItem(sessionKey);
     updateHeaderAuth();
     if (window.location.pathname.startsWith('/stores')) {
       window.location.assign('/login');
@@ -2050,7 +2053,7 @@ if (dressMetadataForm) {
 }
 
 if (typeof window.initAuthPage === 'function') {
-  window.initAuthPage({ sessionKey, usersKey, legacyUsersKeys });
+  window.initAuthPage({ sessionKey, usersKey, legacyUsersKeys, storageAdapter });
 }
 
 if (typeof window.initStoresPage === 'function') {

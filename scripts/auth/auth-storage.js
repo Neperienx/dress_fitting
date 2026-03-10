@@ -1,7 +1,7 @@
 (() => {
-  const parseStoredUsers = (key) => {
+  const parseStoredUsers = (storageAdapter, key) => {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = storageAdapter.getItem(key);
       if (!raw) {
         return {};
       }
@@ -12,17 +12,24 @@
     }
   };
 
-  const createAuthStorage = ({ sessionKey, usersKey, legacyUsersKeys = [] }) => {
+  const createAuthStorage = ({ sessionKey, usersKey, legacyUsersKeys = [], storageAdapter }) => {
+    const adapter =
+      storageAdapter ||
+      (typeof window.createBrowserStorageAdapter === 'function' ? window.createBrowserStorageAdapter() : null);
+
+    if (!adapter) {
+      return null;
+    }
     const readUsers = () => {
-      const users = parseStoredUsers(usersKey);
+      const users = parseStoredUsers(adapter, usersKey);
       if (Object.keys(users).length > 0) {
         return users;
       }
 
       for (const key of legacyUsersKeys) {
-        const legacyUsers = parseStoredUsers(key);
+        const legacyUsers = parseStoredUsers(adapter, key);
         if (Object.keys(legacyUsers).length > 0) {
-          localStorage.setItem(usersKey, JSON.stringify(legacyUsers));
+          adapter.setItem(usersKey, JSON.stringify(legacyUsers));
           return legacyUsers;
         }
       }
@@ -32,15 +39,14 @@
 
     const writeUsers = (users) => {
       try {
-        localStorage.setItem(usersKey, JSON.stringify(users));
-        return true;
+        return adapter.setItem(usersKey, JSON.stringify(users));
       } catch (error) {
         return false;
       }
     };
 
     const persistSessionUser = (username) => {
-      localStorage.setItem(sessionKey, username);
+      return adapter.setItem(sessionKey, username);
     };
 
     return {
