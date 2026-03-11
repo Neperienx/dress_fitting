@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { createStore, fetchStoresForOwner } from '../api/stores';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -20,6 +20,8 @@ export default function StoresScreen({ navigation, route }: Props) {
     try {
       const rows = await fetchStoresForOwner(ownerEmail);
       setStores(rows);
+    } catch (error) {
+      Alert.alert('Unable to load stores', error instanceof Error ? error.message : 'Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -33,10 +35,14 @@ export default function StoresScreen({ navigation, route }: Props) {
     if (!name.trim() || !location.trim()) {
       return;
     }
-    await createStore({ name: name.trim(), location: location.trim(), owner_email: ownerEmail });
-    setName('');
-    setLocation('');
-    await load();
+    try {
+      await createStore({ name: name.trim(), location: location.trim(), owner_email: ownerEmail });
+      setName('');
+      setLocation('');
+      await load();
+    } catch (error) {
+      Alert.alert('Unable to create store', error instanceof Error ? error.message : 'Please check your connection and try again.');
+    }
   };
 
   return (

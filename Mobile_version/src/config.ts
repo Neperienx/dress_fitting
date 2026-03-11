@@ -1,8 +1,16 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const API_PORT = '8000';
 
 function resolveDefaultApiBaseUrl(): string {
+  const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoClient?.hostUri;
+  const host = typeof hostUri === 'string' ? hostUri.split(':')[0] : '';
+
+  if (host) {
+    return `http://${host}:${API_PORT}`;
+  }
+
   if (Platform.OS === 'android') {
     // Android emulators map host-machine localhost to 10.0.2.2.
     return `http://10.0.2.2:${API_PORT}`;
