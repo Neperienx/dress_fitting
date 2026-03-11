@@ -118,17 +118,18 @@ If backend contracts change, update:
 
 ### API base URL
 
-Set in `src/config.ts`:
+Configured in `src/config.ts` with platform-aware defaults:
 
-```ts
-export const API_BASE_URL = 'http://localhost:8000';
+- **Android emulator** defaults to `http://10.0.2.2:8000`
+- **iOS simulator / web** default to `http://localhost:8000`
+
+You can override for any environment with:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.50:8000 npm run start
 ```
 
-For real devices, `localhost` points to the phone itself. Use your machine LAN IP instead, for example:
-
-```ts
-export const API_BASE_URL = 'http://192.168.1.50:8000';
-```
+For real devices, `localhost` points to the phone itself, so use your machine LAN IP.
 
 ### iOS / Android package IDs
 
